@@ -1,0 +1,8 @@
+[package]
+name = "rust_windows_app"
+version = "0.1.0"
+edition = "2021"
+authers = ["Peter"]
+
+[dependencies]
+druid = "0.8.3" # GUI framework for Rust
