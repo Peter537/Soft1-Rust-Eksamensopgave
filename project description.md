@@ -51,12 +51,20 @@
 
 ### 4. Polymorphism
 
+We should probably make an interface for the Screens so we enforce a method called `build_screen`
+
 ### 5. Memory Management
 
 ### 6. Pattern Matching and Control Flow
+
+Vi bruger f.eks. pattern-matching i mod.rs' `build_ui` for at vælge hvilken UI der skal vises.
 
 ### 7. Structs and Data Organization
 
 ### 8. Module System and Code Organization
 
+In each directory, we have a file `mod.rs` which is the entry point for that directory.
+
 ### 9. Concurrency in Rust
+
+We can you concurrency to simulate the race-laps
