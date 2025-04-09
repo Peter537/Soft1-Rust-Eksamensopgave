@@ -1,3 +1,11 @@
+## Game Logic
+
+1. Kalender / Next Action
+2. Race logic
+3. Screens
+4. DB Logic
+5. Load/Create Game
+
 ## Screens
 
 ### Home Screen
