@@ -7,3 +7,6 @@ authors = ["Oskar", "Peter", "Yusuf"]
 [dependencies]
 druid = "0.8.3"                                           # GUI framework for Rust
 rusqlite = { version = "0.31.0", features = ["bundled"] }
+
+[build-dependencies]
+winresource = "0.1"
