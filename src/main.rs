@@ -1,4 +1,5 @@
 mod backend;
+mod database;
 mod ui;
 
 use druid::{AppLauncher, PlatformError, WindowDesc};
