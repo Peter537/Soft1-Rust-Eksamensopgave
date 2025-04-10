@@ -1,8 +1,8 @@
 [package]
-name = "rust_windows_app"
+name = "formula_one_manager"
 version = "0.1.0"
 edition = "2021"
-authers = ["Peter"]
+authers = ["Oskar", "Peter", "Yusuf"]
 
 [dependencies]
 druid = "0.8.3" # GUI framework for Rust
