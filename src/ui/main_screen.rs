@@ -1,19 +1,12 @@
 use druid::widget::{Button, Flex, Label};
 use druid::{Widget, WidgetExt};
 
-use crate::backend::appdata; // Import the appdata module for file operations
+use crate::util::appdata; // Import the appdata module for file operations
 
 use super::AppState;
 use super::Screen::{
-    ChooseTeam,
-    MainGameScreen,
-
-    TeamScreen,
-    TeamListScreen,
-    DriverScreen,
-    DriverListScreen,
-    RaceScheduleScreen,
-    Leaderboard,
+    ChooseTeam, DriverListScreen, DriverScreen, Leaderboard, MainGameScreen, RaceScheduleScreen,
+    TeamListScreen, TeamScreen,
 };
 
 pub fn build_screen() -> impl Widget<AppState> {
@@ -33,18 +26,18 @@ pub fn build_screen() -> impl Widget<AppState> {
         Button::new("Create New Career").on_click(|_ctx, _data: &mut AppState, _env| {
             // Logic to create a new career
             appdata::create_new_career(); // Call the function to create a new career
-            
-            _data.current_screen = ChooseTeam; 
-            _ctx.request_update(); 
-            println!("New career created!"); 
+
+            _data.current_screen = ChooseTeam;
+            _ctx.request_update();
+            println!("New career created!");
         });
 
     let create_load_saved_game_button =
         Button::new("Load Saved Game").on_click(|_ctx, _data: &mut AppState, _env| {
             // Logic to load a saved game
-            _data.current_screen = MainGameScreen; 
-            _ctx.request_update(); 
-            println!("Saved Game loaded!"); 
+            _data.current_screen = MainGameScreen;
+            _ctx.request_update();
+            println!("Saved Game loaded!");
         });
 
     // Vertical layout for the widgets
@@ -57,56 +50,61 @@ pub fn build_screen() -> impl Widget<AppState> {
         .with_child(temp_buttons().align_left())
 }
 
-
 // Temporary buttons for navigation to different screens that should be in the navigation bar
 fn temp_buttons() -> impl Widget<AppState> {
-    let leaderboared_button = Button::new("leaderboared").on_click(|_ctx, _data: &mut AppState, _env| {
-        println!("leaderboared_button clicked!");
-        _data.current_screen = Leaderboard; 
-        _ctx.request_update();
-    });
+    let leaderboared_button =
+        Button::new("leaderboared").on_click(|_ctx, _data: &mut AppState, _env| {
+            println!("leaderboared_button clicked!");
+            _data.current_screen = Leaderboard;
+            _ctx.request_update();
+        });
 
-    let team_screen_button = Button::new("team_screen").on_click(|_ctx, _data: &mut AppState, _env| {
-        println!("team_screen_button clicked!");
-        _data.current_screen = TeamScreen;
-        _ctx.request_update();
-    });
+    let team_screen_button =
+        Button::new("team_screen").on_click(|_ctx, _data: &mut AppState, _env| {
+            println!("team_screen_button clicked!");
+            _data.current_screen = TeamScreen;
+            _ctx.request_update();
+        });
 
-    let team_list_screen_button = Button::new("team_list_screen").on_click(|_ctx, _data: &mut AppState, _env| {
-        println!("team_list_screen_button clicked!");
-        _data.current_screen = TeamListScreen;
-        _ctx.request_update();
-    });
+    let team_list_screen_button =
+        Button::new("team_list_screen").on_click(|_ctx, _data: &mut AppState, _env| {
+            println!("team_list_screen_button clicked!");
+            _data.current_screen = TeamListScreen;
+            _ctx.request_update();
+        });
 
-    let driver_screen_button = Button::new("driver_screen").on_click(|_ctx, _data: &mut AppState, _env| {
-        println!("driver_screen_button clicked!");
-        _data.current_screen = DriverScreen;
-        _ctx.request_update();
-    });
+    let driver_screen_button =
+        Button::new("driver_screen").on_click(|_ctx, _data: &mut AppState, _env| {
+            println!("driver_screen_button clicked!");
+            _data.current_screen = DriverScreen;
+            _ctx.request_update();
+        });
 
-    let driver_list_screen_button = Button::new("driver_list_screen").on_click(|_ctx, _data: &mut AppState, _env| {
-        println!("driver_list_screen_button clicked!");
-        _data.current_screen = DriverListScreen;
-        _ctx.request_update();
-    });
+    let driver_list_screen_button =
+        Button::new("driver_list_screen").on_click(|_ctx, _data: &mut AppState, _env| {
+            println!("driver_list_screen_button clicked!");
+            _data.current_screen = DriverListScreen;
+            _ctx.request_update();
+        });
 
-    let race_schedule_screen_button = Button::new("race_schedule_screen").on_click(|_ctx, _data: &mut AppState, _env| {
-        println!("race_schedule_screen_button clicked!");
-        _data.current_screen = RaceScheduleScreen;
-        _ctx.request_update();
-    });
+    let race_schedule_screen_button =
+        Button::new("race_schedule_screen").on_click(|_ctx, _data: &mut AppState, _env| {
+            println!("race_schedule_screen_button clicked!");
+            _data.current_screen = RaceScheduleScreen;
+            _ctx.request_update();
+        });
 
     Flex::row()
         .with_child(leaderboared_button)
-        .with_spacer(20.0) 
+        .with_spacer(20.0)
         .with_child(team_screen_button)
         .with_spacer(20.0)
         .with_child(team_list_screen_button)
-        .with_spacer(20.0) 
+        .with_spacer(20.0)
         .with_child(driver_screen_button)
         .with_spacer(20.0)
         .with_child(driver_list_screen_button)
-        .with_spacer(20.0) 
+        .with_spacer(20.0)
         .with_child(race_schedule_screen_button)
         .with_spacer(20.0)
 }
