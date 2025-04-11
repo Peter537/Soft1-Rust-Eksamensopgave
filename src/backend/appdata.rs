@@ -12,10 +12,35 @@ pub fn create_files_if_not_exist() {
     // Create Mod/Default directory and create_script.sql
     let mod_default_path = base_path.join("Mod").join("Default");
     fs::create_dir_all(&mod_default_path).expect("Failed to create Mod/Default directory");
-    let default_database_path = mod_default_path.join("default_database.db");
+    let default_database_path = mod_default_path.join("database.db");
     if !default_database_path.exists() {
-        fs::copy("sql/default_database.db", default_database_path)
-            .expect("Failed to copy default_database.db");
+        fs::copy("mod/database.db", default_database_path)
+            .expect("Failed to copy default database.db");
+    }
+
+    let mod_image_paths = ["Cars", "Circuits", "Countries", "Drivers", "Teams"];
+    for image_path in mod_image_paths {
+        let path = mod_default_path.join(image_path);
+        if !path.exists() {
+            fs::create_dir_all(&path).expect(&format!(
+                "Failed to create Mod/Default/{} directory",
+                image_path
+            ));
+
+            let source_path = PathBuf::from("mod").join(image_path);
+            if source_path.exists() {
+                for entry in fs::read_dir(source_path).expect("Failed to read directory") {
+                    if let Ok(entry) = entry {
+                        let file_name = entry.file_name();
+                        let destination_path = path.join(&file_name);
+                        fs::copy(entry.path(), destination_path)
+                            .expect("Failed to copy image file");
+                    }
+                }
+            } else {
+                println!("Source path does not exist: {:?}", source_path);
+            }
+        }
     }
 
     // Create GameSaves directory
