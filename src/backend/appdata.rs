@@ -98,11 +98,8 @@ pub fn create_new_career() {
     };
 
     fs::copy(
-        base_path
-            .join("Mod")
-            .join("Default")
-            .join("default_database.db"),
+        base_path.join("Mod").join("Default").join("database.db"),
         game_saves_path.join(format!("Career_{}.db", new_career_number)),
     )
-    .expect("Failed to copy default_database.db to new career file");
+    .expect("Failed to copy default database.db to new career file");
 }
