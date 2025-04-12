@@ -46,7 +46,7 @@ impl<W: Widget<AppState>> Controller<AppState, W> for ButtonController {
 pub fn make_table(
     column: Vec<String>,
     data: Vec<Vec<String>>,
-    clickable_col: Option<(usize, Box<dyn Fn(&str) -> Box<dyn Fn(&mut EventCtx, &mut AppState)>>)>,
+    clickable_cols: Vec<(usize, Box<dyn Fn(&str) -> Box<dyn Fn(&mut EventCtx, &mut AppState)>>)>,
 ) -> impl Widget<AppState> {
     if column.is_empty() {
         println!("Column is empty!");
@@ -76,26 +76,19 @@ pub fn make_table(
     // Data rows with borders
     for row in data.iter() {
         let mut row_container = Flex::row();
-        
         for (col_idx, cell) in row.iter().enumerate() {
-            if let Some((clickable_col_idx, handler_fn)) = &clickable_col {
-                if col_idx == *clickable_col_idx {
-                    // Create a click handler for this cell using the provided closure
-                    let handler = handler_fn(cell);
-                    let cell_widget = Label::new(cell.clone());
-                    let cell_widget = cell_widget.controller(ButtonController::new(Some(handler)));
-                    row_container.add_child(bordered_cell(cell_widget));
-
-                } else {
-                    // Non-clickable cell
-                    row_container.add_child(bordered_cell(Label::new(cell.clone())));
-                }
+            // Check if this column is clickable
+            if let Some((_, handler_fn)) = clickable_cols.iter().find(|(idx, _)| *idx == col_idx) {
+                // Create a click handler for this cell
+                let handler = handler_fn(cell);
+                let cell_widget = Label::new(cell.clone());
+                let cell_widget = cell_widget.controller(ButtonController::new(Some(handler)));
+                row_container.add_child(bordered_cell(cell_widget));
             } else {
                 // Non-clickable cell
                 row_container.add_child(bordered_cell(Label::new(cell.clone())));
             }
         }
-        
         table.add_child(row_container);
         table.add_spacer(4.0);
     }

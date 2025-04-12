@@ -31,11 +31,10 @@ pub fn build_screen() -> impl Widget<AppState> {
             })
         });
 
-    let table = make_table(col, data, Some((1, team_handler)));
+    let table = make_table(col, data, vec![(1, team_handler)]);
 
     // without custom button, just use this:
-    // let table = make_table(col, data, None);
-
+    // let table = make_table(col, data, vec![]);
     Flex::column()
         .with_spacer(20.0)
         .with_child(Label::new("Leaderboard Screen"))
