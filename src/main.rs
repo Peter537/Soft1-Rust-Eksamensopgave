@@ -1,5 +1,6 @@
 mod backend;
 mod database;
+mod model;
 mod ui;
 mod util;
 
