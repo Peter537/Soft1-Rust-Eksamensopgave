@@ -15,6 +15,8 @@ pub mod driver_screen;
 pub mod driver_list_screen;
 pub mod race_schedule_screen;
 
+pub mod component;
+
 // Application state struct, holding data shared across the UI
 #[derive(Clone, Data, Lens)]
 pub struct AppState {
