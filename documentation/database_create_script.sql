@@ -76,23 +76,16 @@ CREATE TABLE circuits (
   FOREIGN KEY (fk_country_id) REFERENCES countries(id)
 );
 
--- Table: race_results
-CREATE TABLE race_results (
-  id INTEGER PRIMARY KEY,
-  race_name TEXT NOT NULL,
-  weather_condition TEXT NOT NULL
-);
-
--- Table: race_driver_results (depends on race_results, drivers, teams)
+-- Table: race_driver_results (depends on season_schedules, drivers, teams)
 CREATE TABLE race_driver_results (
   id INTEGER PRIMARY KEY,
-  fk_race_result_id INTEGER NOT NULL,
+  fk_season_schedule_id INTEGER NOT NULL,
   fk_driver_id INTEGER NOT NULL,
   fk_team_id INTEGER NOT NULL,
   placement INTEGER,
   points INTEGER NOT NULL DEFAULT 0,
   status TEXT NOT NULL,  -- Ex: Finished, DNF
-  FOREIGN KEY (fk_race_result_id) REFERENCES race_results(id),
+  FOREIGN KEY (fk_season_schedule_id) REFERENCES season_schedules(id),
   FOREIGN KEY (fk_driver_id) REFERENCES drivers(id),
   FOREIGN KEY (fk_team_id) REFERENCES teams(id)
 );
@@ -117,13 +110,11 @@ CREATE TABLE season_schedules (
   id INTEGER PRIMARY KEY,
   fk_season_id INTEGER NOT NULL,
   fk_circuit_id INTEGER NOT NULL,
-  fk_race_result_id INTEGER,
   date TIMESTAMP NOT NULL,
   status TEXT NOT NULL,
   grand_prix_name TEXT NOT NULL,
   FOREIGN KEY (fk_season_id) REFERENCES seasons(id),
-  FOREIGN KEY (fk_circuit_id) REFERENCES circuits(id),
-  FOREIGN KEY (fk_race_result_id) REFERENCES race_results(id)
+  FOREIGN KEY (fk_circuit_id) REFERENCES circuits(id)
 );
 
 -- Table: config (optionally depends on teams)
