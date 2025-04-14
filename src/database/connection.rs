@@ -2,10 +2,12 @@ use rusqlite::Connection;
 use std::env;
 use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::{Mutex, MutexGuard};
 
 // Define the static mutex to hold the database connection
 static CONNECTION: Mutex<Option<Connection>> = Mutex::new(None);
+static GAME_NUMBER: AtomicI32 = AtomicI32::new(0); // TODO: Important ! Make sure this is updated when creating/loading a game
 
 pub struct ConnectionGuard(MutexGuard<'static, Option<Connection>>);
 
@@ -30,6 +32,12 @@ pub fn get_connection() -> Result<ConnectionGuard, String> {
         .lock()
         .map_err(|_| "Failed to lock connection mutex".to_string())?;
 
+    let game_number = GAME_NUMBER.load(Ordering::SeqCst);
+    if game_number == 0 {
+        // If the game number is not set, return an error
+        return Err("Game number is not set".to_string());
+    }
+
     // Check if the connection is not yet initialized
     if conn_guard.is_none() {
         // Get the user's roaming app data directory
@@ -38,7 +46,7 @@ pub fn get_connection() -> Result<ConnectionGuard, String> {
         let save_games_path = base_path.join("GameSaves");
 
         // Construct the database file path (e.g., Career_1.db)
-        let db_file = format!("Career_{}.db", 1);
+        let db_file = format!("Career_{}.db", game_number);
         let db_path = save_games_path.join(db_file);
 
         // Open the connection to the database
@@ -48,4 +56,9 @@ pub fn get_connection() -> Result<ConnectionGuard, String> {
     }
 
     Ok(ConnectionGuard(conn_guard))
+}
+
+pub fn set_game_number(number: i32) {
+    // Set the game number in the static variable
+    GAME_NUMBER.store(number, Ordering::SeqCst);
 }
