@@ -1,6 +1,7 @@
 use druid::widget::{Button, Flex, Label};
 use druid::{Widget, WidgetExt};
 
+use crate::backend::race;
 use crate::util::appdata; // Import the appdata module for file operations
 
 use super::AppState;
@@ -94,6 +95,12 @@ fn temp_buttons() -> impl Widget<AppState> {
             _ctx.request_update();
         });
 
+    let race_start_button =
+        Button::new("race_start_button").on_click(|_ctx, _data: &mut AppState, _env| {
+            println!("race_start_button clicked!");
+            race::start_race(1);
+        });
+
     Flex::row()
         .with_child(leaderboared_button)
         .with_spacer(20.0)
@@ -106,5 +113,7 @@ fn temp_buttons() -> impl Widget<AppState> {
         .with_child(driver_list_screen_button)
         .with_spacer(20.0)
         .with_child(race_schedule_screen_button)
+        .with_spacer(20.0)
+        .with_child(race_start_button)
         .with_spacer(20.0)
 }

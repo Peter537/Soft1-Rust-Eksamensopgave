@@ -1,19 +1,25 @@
 use rusqlite::Connection;
 use std::env;
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
 use std::sync::{Mutex, MutexGuard};
 
-// Global state to hold the connection, initially None
+// Define the static mutex to hold the database connection
 static CONNECTION: Mutex<Option<Connection>> = Mutex::new(None);
 
-// Custom struct to hold the MutexGuard and provide access to Connection
 pub struct ConnectionGuard(MutexGuard<'static, Option<Connection>>);
 
 impl Deref for ConnectionGuard {
     type Target = Connection;
+
     fn deref(&self) -> &Self::Target {
-        self.0.as_ref().unwrap()
+        (*self.0).as_ref().unwrap()
+    }
+}
+
+impl DerefMut for ConnectionGuard {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        (*self.0).as_mut().unwrap()
     }
 }
 
