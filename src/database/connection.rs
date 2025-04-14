@@ -18,7 +18,7 @@ impl Deref for ConnectionGuard {
 }
 
 // Function to get or create the connection based on the career number
-pub fn get_connection(career_number: u32) -> Result<ConnectionGuard, String> {
+pub fn get_connection() -> Result<ConnectionGuard, String> {
     // Lock the mutex to safely access or modify the connection
     let mut conn_guard = CONNECTION
         .lock()
@@ -32,7 +32,7 @@ pub fn get_connection(career_number: u32) -> Result<ConnectionGuard, String> {
         let save_games_path = base_path.join("GameSaves");
 
         // Construct the database file path (e.g., Career_1.db)
-        let db_file = format!("Career_{}.db", career_number);
+        let db_file = format!("Career_{}.db", 1);
         let db_path = save_games_path.join(db_file);
 
         // Open the connection to the database

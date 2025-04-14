@@ -2,7 +2,7 @@ use crate::database::connection::get_connection;
 use crate::model::driver::Driver;
 
 pub fn get_driver_by_id(id: i32) -> Option<Driver> {
-    let conn = get_connection(1).unwrap();
+    let conn = get_connection().unwrap();
     let mut stmt = conn
         .prepare("SELECT d.id, d.first_name, d.last_name, d.rating, d.fk_country_id, d.date_of_birth, d.racing_number, d.image_driver
                         FROM drivers d
