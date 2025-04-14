@@ -3,17 +3,17 @@
 use druid::{widget::ViewSwitcher, Data, Lens}; // Added ViewSwitcher import
 
 // Public submodules for screen-specific UI logic
-pub mod main_screen;
 pub mod choose_team_screen;
 pub mod main_game_screen;
+pub mod main_screen;
 pub mod race_screen;
 
-pub mod leaderboard_screen;
-pub mod team_screen;
-pub mod team_list_screen;
-pub mod driver_screen;
 pub mod driver_list_screen;
+pub mod driver_screen;
+pub mod leaderboard_screen;
 pub mod race_schedule_screen;
+pub mod team_list_screen;
+pub mod team_screen;
 
 pub mod component;
 

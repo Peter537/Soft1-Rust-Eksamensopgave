@@ -5,7 +5,6 @@ use super::component::table::make_table;
 use super::AppState;
 use super::Screen::{Main, TeamScreen};
 
-
 pub fn build_screen() -> impl Widget<AppState> {
     let col = vec![
         "Position".to_string(),
@@ -17,7 +16,7 @@ pub fn build_screen() -> impl Widget<AppState> {
         vec!["1".to_string(), "Team A".to_string(), "100".to_string()],
         vec!["2".to_string(), "Team B".to_string(), "90".to_string()],
         vec!["3".to_string(), "Team C".to_string(), "80".to_string()],
-    ]; 
+    ];
 
     // Custom bnt for all cells in the second column (team names)
     let team_handler: Box<dyn Fn(&str) -> Box<dyn Fn(&mut EventCtx, &mut AppState)>> =
@@ -38,11 +37,13 @@ pub fn build_screen() -> impl Widget<AppState> {
     Flex::column()
         .with_spacer(20.0)
         .with_child(Label::new("Leaderboard Screen"))
-        .with_child(Button::new("Back to Main").on_click(|_ctx, data: &mut AppState, _env| {
-            data.current_screen = Main;
-            _ctx.request_update();
-        }))
-        .with_spacer(40.0) 
+        .with_child(
+            Button::new("Back to Main").on_click(|_ctx, data: &mut AppState, _env| {
+                data.current_screen = Main;
+                _ctx.request_update();
+            }),
+        )
+        .with_spacer(40.0)
         .with_child(table)
         .with_spacer(20.0)
 }

@@ -46,7 +46,10 @@ impl<W: Widget<AppState>> Controller<AppState, W> for ButtonController {
 pub fn make_table(
     column: Vec<String>,
     data: Vec<Vec<String>>,
-    clickable_cols: Vec<(usize, Box<dyn Fn(&str) -> Box<dyn Fn(&mut EventCtx, &mut AppState)>>)>,
+    clickable_cols: Vec<(
+        usize,
+        Box<dyn Fn(&str) -> Box<dyn Fn(&mut EventCtx, &mut AppState)>>,
+    )>,
 ) -> impl Widget<AppState> {
     if column.is_empty() {
         println!("Column is empty!");
