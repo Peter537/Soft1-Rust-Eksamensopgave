@@ -4,6 +4,8 @@ use druid::{Widget, WidgetExt};
 use crate::backend::race;
 use crate::util::appdata; // Import the appdata module for file operations
 
+use crate::database::connection::set_game_number;
+
 use super::AppState;
 use super::Screen::{
     ChooseTeam, DriverListScreen, DriverScreen, Leaderboard, MainGameScreen, RaceScheduleScreen,
@@ -11,6 +13,9 @@ use super::Screen::{
 };
 
 pub fn build_screen() -> impl Widget<AppState> {
+    // for testing purposes, delete this later:
+    set_game_number(1);
+
     let existing_careers = appdata::get_existing_careers();
 
     let mut existing_careers_str = String::new();
@@ -21,12 +26,13 @@ pub fn build_screen() -> impl Widget<AppState> {
     // Label displaying existing careers
     let existing_careers_label = Label::new(existing_careers_str.clone())
         .with_text_size(20.0)
-        .with_text_color(druid::Color::rgb8(0, 0, 0)); // Set text color to black
+        .with_text_color(druid::Color::rgb8(0, 0, 0));
 
     let create_new_career_button =
         Button::new("Create New Career").on_click(|_ctx, _data: &mut AppState, _env| {
             // Logic to create a new career
             appdata::create_new_career(); // Call the function to create a new career
+            // set_game_number(1); // Set the game number to 1 for testing purposes
 
             _data.current_screen = ChooseTeam;
             _ctx.request_update();
@@ -36,6 +42,9 @@ pub fn build_screen() -> impl Widget<AppState> {
     let create_load_saved_game_button =
         Button::new("Load Saved Game").on_click(|_ctx, _data: &mut AppState, _env| {
             // Logic to load a saved game
+            // set_game_number(1); // Set the game number to 1 for testing purposes
+            // appdata::load_saved_game(); // Call the function to load a saved game
+
             _data.current_screen = MainGameScreen;
             _ctx.request_update();
             println!("Saved Game loaded!");

@@ -22,6 +22,7 @@ pub mod component;
 pub struct AppState {
     pub current_screen: Screen, // Tracks the active screen
     pub game_number: String,
+    pub selected_team: Option<String>,
 }
 
 // Enum to represent different screens in the app
@@ -47,6 +48,7 @@ impl Default for AppState {
         AppState {
             current_screen: Screen::Main,
             game_number: String::new(),
+            selected_team: None,
         }
     }
 }

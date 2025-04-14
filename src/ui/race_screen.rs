@@ -7,8 +7,6 @@ use image::load_from_memory;
 
 use super::AppState;
 
-use crate::backend::race;
-
 pub fn build_screen() -> impl Widget<AppState> {
     let home_button = Button::new("Home").on_click(|_ctx, _data: &mut AppState, _env| {
         // Logic for home button
