@@ -4,7 +4,6 @@ use crate::backend::lap;
 
 use crate::model::lap::Lap;
 use crate::model::race_driver_result::RaceDriverResult;
-use crate::model::season;
 
 pub fn start_race(season_schedule_id: i32) {
     // 1. Hent object fra databasen
@@ -54,7 +53,7 @@ pub fn start_race(season_schedule_id: i32) {
     // 5. Create driver result objects
     println!("Creating driver results and laps");
     let mut driver_results: Vec<(i32, (RaceDriverResult, Vec<Lap>))> = Vec::new();
-    for (index, (driver_id, total_time)) in total_driver_time.iter().enumerate() {
+    for (index, (driver_id, _)) in total_driver_time.iter().enumerate() {
         let placement = (index + 1) as i32;
         let points = match placement {
             1 => 25,
