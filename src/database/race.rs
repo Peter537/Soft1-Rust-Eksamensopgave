@@ -108,3 +108,32 @@ pub fn save_driver_results(
     // Commit the transaction
     tx.commit().unwrap();
 }
+
+pub fn get_next_race() -> Option<SeasonSchedule> {
+    let conn = get_connection().unwrap();
+    let mut stmt = conn
+        .prepare(
+            "SELECT id, fk_season_id, fk_circuit_id, date, status, grand_prix_name FROM season_schedules WHERE status = 'Upcoming' ORDER BY date ASC LIMIT 1",
+        )
+        .unwrap();
+    let row = stmt.query_row([], |row| {
+        let id: i32 = row.get(0)?;
+        let season_id: i32 = row.get(1)?;
+        let circuit_id: i32 = row.get(2)?;
+        let date: String = row.get(3)?;
+        let status: String = row.get(4)?;
+        let grand_prix_name: String = row.get(5)?;
+        Ok(SeasonSchedule {
+            id,
+            season_id,
+            circuit_id,
+            date,
+            status,
+            grand_prix_name,
+        })
+    });
+    match row {
+        Ok(season_schedule) => Some(season_schedule),
+        Err(_) => None,
+    }
+}
