@@ -85,3 +85,43 @@ pub fn get_team_id_by_driver_id(driver_id: &i32) -> Option<i32> {
         Err(_) => None,
     }
 }
+
+pub fn get_top_three_driver_standings() -> Option<Vec<(i32, String, i32)>> {
+    let conn = get_connection().unwrap();
+
+    let mut stmt = conn.prepare(
+        r#"
+        SELECT 
+            d.first_name || ' ' || d.last_name AS driver_name,
+            COALESCE(SUM(rdr.points), 0) AS total_points
+        FROM drivers d
+        JOIN race_driver_results rdr ON d.id = rdr.fk_driver_id
+        GROUP BY d.id, d.first_name, d.last_name
+        ORDER BY total_points DESC
+        LIMIT 3
+        "#,
+    ).unwrap();
+
+    let rows = stmt.query_map([], |row| {
+        Ok((
+            row.get::<_, String>(0)?, // driver_name
+            row.get::<_, i32>(1)?,    // total_points
+        ))
+    }).unwrap();
+
+    let mut standings: Vec<(i32, String, i32)> = Vec::new();
+    let mut position = 1;
+    for row in rows {
+        let (driver_name, points) = row.unwrap();
+        standings.push((position, driver_name, points));
+        position += 1;
+    }
+
+    println!("Top 3 drivers standings: {:?}", standings);
+    
+    if standings.is_empty() {
+        None
+    } else {
+        Some(standings)
+    }
+}

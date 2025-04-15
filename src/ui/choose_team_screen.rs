@@ -1,11 +1,11 @@
-use druid::widget::{Button, Container, CrossAxisAlignment, Flex, Label, MainAxisAlignment, Scroll};
+use druid::widget::{Button, CrossAxisAlignment, Flex, Label, MainAxisAlignment, Scroll};
 use druid::{Env, Widget};
 use druid::WidgetExt;
 
 use super::AppState;
 use super::Screen::MainGameScreen;
 
-use crate::database::teams::get_all_teams;
+use crate::database::teams::{get_all_teams, save_selected_team};
 
 pub fn build_screen() -> impl Widget<AppState> {
     let teams = get_all_teams();
@@ -69,8 +69,6 @@ pub fn build_screen() -> impl Widget<AppState> {
         }
     }
 
-
-
     let two_column_inner = Flex::row()
     .main_axis_alignment(MainAxisAlignment::Center)
     .cross_axis_alignment(CrossAxisAlignment::Start)
@@ -80,12 +78,13 @@ pub fn build_screen() -> impl Widget<AppState> {
     .with_flex_child(right_column.expand_height(), 1.0);
 
     let scrollable_two_column_layout = Scroll::new(two_column_inner).vertical();
-
-    
     
     let start_game_button = Button::new("Start game").on_click(|ctx, data: &mut AppState, _env| {
+        save_selected_team(data.selected_team.as_ref().unwrap());
+        
         data.current_screen = MainGameScreen;
         ctx.request_update();
+
     }).disabled_if(|data: &AppState, _env| {
         data.selected_team.is_none()
     });
@@ -98,9 +97,7 @@ pub fn build_screen() -> impl Widget<AppState> {
             "No team selected".to_string()
         }
     }).with_text_size(16.0);
-    
 
-    // Final screen layout
     Flex::column()
         .cross_axis_alignment(CrossAxisAlignment::Center)
         .with_child(Label::new("Choose your team").with_text_size(20.0))

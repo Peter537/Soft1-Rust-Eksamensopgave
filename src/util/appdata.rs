@@ -3,6 +3,8 @@ use std::env;
 use std::fs;
 use std::path::PathBuf;
 
+use crate::database::connection::set_game_number;
+
 pub fn create_files_if_not_exist() {
     // Get the AppData/Roaming path
     let appdata = env::var("APPDATA").expect("APPDATA environment variable not found");
@@ -96,6 +98,8 @@ pub fn create_new_career() {
         }
         new_career_number
     };
+
+    set_game_number(new_career_number as i32); // Set the game number for the new career
 
     fs::copy(
         base_path.join("Mod").join("Default").join("database.db"),
