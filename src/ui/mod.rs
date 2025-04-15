@@ -32,7 +32,7 @@ pub enum Screen {
     //Settings,
     ChooseTeam,
     MainGameScreen,
-    RaceScreen,
+    RaceScreen { race_id: i32 },
 
     // from nav:
     Leaderboard,
@@ -63,7 +63,7 @@ pub fn build_ui() -> impl druid::Widget<AppState> {
                 //Screen::Settings => Box::new(settings_screen::build_settings_screen()),
                 Screen::ChooseTeam => Box::new(choose_team_screen::build_screen()),
                 Screen::MainGameScreen => Box::new(main_game_screen::build_screen()),
-                Screen::RaceScreen => Box::new(race_screen::build_screen()),
+                Screen::RaceScreen { race_id } => Box::new(race_screen::build_screen(*race_id)),
 
                 // Nav:
                 Screen::Leaderboard => Box::new(leaderboard_screen::build_screen()),

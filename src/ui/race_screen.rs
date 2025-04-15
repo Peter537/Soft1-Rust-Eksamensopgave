@@ -6,16 +6,29 @@ use druid::piet::ImageFormat;
 use image::load_from_memory;
 
 use super::AppState;
+use super::Screen::{Main, MainGameScreen};
 
-pub fn build_screen() -> impl Widget<AppState> {
+use crate::backend::race::start_race;
+
+pub fn build_screen(race_id: i32) -> impl Widget<AppState> {
+    println!("race_id: {}", &race_id.to_string());
+
     let home_button = Button::new("Home").on_click(|_ctx, _data: &mut AppState, _env| {
         // Logic for home button
-        _data.current_screen = super::Screen::Main; // Go back to main screen
+        _data.current_screen = Main; // Go back to main screen
         _ctx.request_update();
         println!("Home button clicked!");
     });
 
     let (img, circuit_info) = circuit_info();
+
+    let start_race_button =
+        Button::new("Start Race").on_click(move |_ctx, _data: &mut AppState, _env| {
+            start_race(race_id);
+            _data.current_screen = MainGameScreen;
+            _ctx.request_update();
+            println!("Start Race button clicked!");
+        });
 
     Flex::column()
         .cross_axis_alignment(CrossAxisAlignment::Center)
@@ -31,7 +44,8 @@ pub fn build_screen() -> impl Widget<AppState> {
                         Flex::column()
                             .with_spacer(20.0)
                             .with_child(race_result())
-                            .with_spacer(20.0),
+                            .with_spacer(20.0)
+                            .with_child(start_race_button),
                         1.0,
                     )
                     .with_spacer(200.0)
