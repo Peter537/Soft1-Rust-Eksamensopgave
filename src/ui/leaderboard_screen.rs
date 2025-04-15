@@ -3,7 +3,7 @@ use druid::Widget;
 
 use super::component::table::make_table;
 use super::AppState;
-use super::Screen::{Main, TeamScreen};
+use super::Screen::Main;
 
 use crate::database::teams::get_top_teams_standings;
 use crate::database::driver::get_top_driver_standings;
