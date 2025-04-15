@@ -117,8 +117,8 @@ CREATE TABLE season_schedules (
   FOREIGN KEY (fk_circuit_id) REFERENCES circuits(id)
 );
 
--- Table: config (optionally depends on teams)
-CREATE TABLE config (
+-- Table: game_config (optionally depends on teams)
+CREATE TABLE game_config (
   id INTEGER PRIMARY KEY,
   starting_year INTEGER NOT NULL,
   current_date INTEGER NOT NULL,

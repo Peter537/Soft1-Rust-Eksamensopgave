@@ -148,5 +148,5 @@ INSERT INTO season_schedules (fk_season_id, fk_circuit_id, date, status, grand_p
 (1, 24, '2025-12-07', 'Upcoming', 'Abu Dhabi Grand Prix');
 
 -- Populate the config table with season settings
-INSERT INTO config (starting_year, current_date, selected_team) VALUES
-(2025, '2505-01-01', NULL);
+INSERT INTO game_config (starting_year, current_date, selected_team) VALUES
+(2025, '2025-01-01', NULL);
