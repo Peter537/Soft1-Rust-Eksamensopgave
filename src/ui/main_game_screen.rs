@@ -18,10 +18,6 @@ pub fn build_screen() -> impl Widget<AppState> {
             println!("New action triggered!");
         });
     
-    // Create the main game screen layout
-    // This screen should have 4-5 parts
-    // on the left side a table with race list - containing data like racename, winner, positions etc.
-    
     let cols = vec!["1".to_string(), "2".to_string()];
     let data = vec![vec!["x".to_string(), "x".to_string()]];
 
@@ -101,16 +97,6 @@ pub fn build_screen() -> impl Widget<AppState> {
         .border(druid::theme::BORDER_DARK, 1.0);
 
     column3.add_flex_child(col3_container, 1.0);
-
-
-    /*column3.add_child(Label::new("My Team").with_text_size(20.0));
-    column3.add_spacer(10.0);
-    column3.add_child(Label::new(format!("Team: {}", team_name)).with_text_size(16.0));
-    column3.add_spacer(5.0);
-    column3.add_child(Label::new(format!("Drivers: {:?}", drivers.join(", "))).with_text_size(16.0));
-    column3.add_spacer(5.0);
-    column3.add_child(Label::new(format!("Total Points: {}", total_points)).with_text_size(16.0));
-    column3.border(druid::theme::BORDER_DARK, 1.0); */
     
     let mut column4 = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
     column4.add_child(new_action_button);
