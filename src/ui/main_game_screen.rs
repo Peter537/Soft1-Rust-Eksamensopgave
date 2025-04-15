@@ -3,8 +3,8 @@ use druid::{Widget, WidgetExt};
 
 use crate::ui::component::table::make_table;
 
-use crate::database::teams::{get_own_team_standing, get_top_three_teams_standings};
-use crate::database::driver::get_top_three_driver_standings;
+use crate::database::teams::{get_own_team_standing, get_top_teams_standings};
+use crate::database::driver::get_top_driver_standings;
 use crate::ui::component::goto::{goto_driver, goto_team};
 
 use super::AppState;
@@ -37,7 +37,7 @@ pub fn build_screen() -> impl Widget<AppState> {
     column2.add_spacer(5.0);
 
 
-    let top_three_drivers = get_top_three_driver_standings().unwrap();
+    let top_three_drivers = get_top_driver_standings(Some(3)).unwrap_or(vec![]);
     let cols = vec!["#".to_string(), "Driver Name".to_string(), "Points".to_string()];
     
     // make dommain for the table if empty
@@ -58,7 +58,7 @@ pub fn build_screen() -> impl Widget<AppState> {
     column2.add_spacer(10.0);
 
 
-    let top_three_teams = get_top_three_teams_standings().unwrap();
+    let top_three_teams = get_top_teams_standings(Some(3)).unwrap_or(vec![]);
     let cols = vec!["#".to_string(), "Team Name".to_string(), "Points".to_string()];
     
     let mut data: Vec<Vec<String>> = cols.iter()

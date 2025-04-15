@@ -129,12 +129,11 @@ pub fn get_own_team_standing() -> Option<(String, Vec<String>, i32)> {
 }
 
 
-pub fn get_top_three_teams_standings() -> Option<Vec<(i32, String, i32)>>{
-    // position, driver, points
+pub fn get_top_teams_standings(limit: Option<i32>) -> Option<Vec<(i32, String, i32)>> {
+    // position, team, points
     let conn = get_connection().unwrap();
 
-    let mut stmt = conn.prepare(
-        r#"
+    let base_query = r#"
         SELECT 
             t.short_name,
             COALESCE(SUM(rdr.points), 0) AS total_points
@@ -142,10 +141,17 @@ pub fn get_top_three_teams_standings() -> Option<Vec<(i32, String, i32)>>{
         LEFT JOIN race_driver_results rdr ON t.id = rdr.fk_team_id
         GROUP BY t.id, t.short_name
         ORDER BY total_points DESC
-        LIMIT 3
-        "#,
-    ).unwrap();
+    "#;
 
+    // Prepare query with optional LIMIT
+    let final_query = match limit {
+        Some(n) => format!("{} LIMIT {}", base_query, n),
+        None => base_query.to_string(),
+    };
+
+    let mut stmt = conn.prepare(&final_query).unwrap();
+
+    // Unified query_map logic
     let rows = stmt.query_map([], |row| {
         Ok((
             row.get::<_, String>(0)?, // short_name
@@ -154,18 +160,20 @@ pub fn get_top_three_teams_standings() -> Option<Vec<(i32, String, i32)>>{
     }).unwrap();
 
     let mut standings: Vec<(i32, String, i32)> = Vec::new();
-
     let mut position = 1;
+
     for row in rows {
         let (team_name, points) = row.unwrap();
         standings.push((position, team_name, points));
         position += 1;
     }
-    println!("Top 3 teams standings: {:?}", standings);
+
+    println!("Top teams standings: {:?}", standings);
 
     if standings.is_empty() {
         None
     } else {
         Some(standings)
     }
+
 }
