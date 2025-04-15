@@ -7,6 +7,8 @@ use crate::ui::component::table::make_table;
 use super::AppState;
 use super::Screen::Main;
 
+use crate::ui::component::goto::{goto_driver, goto_team};
+
 pub fn build_screen() -> impl Widget<AppState> {
 
     let all_teams = get_team_data();
@@ -18,7 +20,7 @@ pub fn build_screen() -> impl Widget<AppState> {
         "Country".to_string(),
     ];
 
-    let driver_table = make_table(col, all_teams, vec![]);
+    let driver_table = make_table(col, all_teams, vec![(0, goto_team()), (2, goto_driver())]);
 
     Flex::column()
         .with_spacer(20.0)

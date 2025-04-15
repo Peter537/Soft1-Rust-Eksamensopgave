@@ -5,6 +5,7 @@ use crate::ui::component::table::make_table;
 
 use crate::database::teams::{get_own_team_standing, get_top_three_teams_standings};
 use crate::database::driver::get_top_three_driver_standings;
+use crate::ui::component::goto::{goto_driver, goto_team};
 
 use super::AppState;
 use super::Screen::RaceScreen;
@@ -51,7 +52,7 @@ pub fn build_screen() -> impl Widget<AppState> {
             .collect();
     }
     
-    let top_three_drivers = make_table(cols, data, vec![]);
+    let top_three_drivers = make_table(cols, data, vec![(1, goto_driver())]);
 
     column2.add_child(top_three_drivers);
     column2.add_spacer(10.0);
@@ -71,7 +72,7 @@ pub fn build_screen() -> impl Widget<AppState> {
             .collect();
     }
 
-    let top_three_teams = make_table(cols, data, vec![]);
+    let top_three_teams = make_table(cols, data, vec![(1, goto_team())]);
 
     column2.add_child(Label::new("Top 3 team standings"));
     column2.add_spacer(5.0);
