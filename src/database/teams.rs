@@ -1,7 +1,6 @@
 use crate::database::connection::get_connection;
 use std::collections::HashMap;
 
-
 pub fn get_all_teams() -> Vec<(String, String, Vec<(String, String)>)>{
     let conn = get_connection().unwrap();
     let mut stmt = conn.prepare(
