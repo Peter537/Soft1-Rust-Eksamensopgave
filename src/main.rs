@@ -5,15 +5,18 @@ mod ui;
 mod util;
 
 use druid::{AppLauncher, PlatformError, WindowDesc};
+use ui::MyAppDelegate;
 
 fn main() -> Result<(), PlatformError> {
-    util::appdata::create_files_if_not_exist(); // Ensure necessary directories and files exist
+    util::appdata::create_files_if_not_exist();
 
-    // Define the main window with the UI from ui::build_ui
     let main_window = WindowDesc::new(ui::build_ui()).title("Formula One Manager");
 
-    // Launch the app with the default application state
-    AppLauncher::with_window(main_window).launch(ui::AppState::default())?;
+    let delegate = MyAppDelegate::new();
+
+    AppLauncher::with_window(main_window)
+        .delegate(delegate)
+        .launch(ui::AppState::default())?;
 
     Ok(())
 }

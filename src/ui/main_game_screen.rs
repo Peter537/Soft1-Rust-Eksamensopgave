@@ -1,17 +1,35 @@
 use chrono::NaiveDate;
-use druid::widget::{Button, CrossAxisAlignment, Flex, Label, MainAxisAlignment};
-use druid::{Widget, WidgetExt};
+use druid::widget::{Button, Controller, CrossAxisAlignment, Flex, Label, MainAxisAlignment};
+use druid::{Command, Data, Env, LifeCycle, LifeCycleCtx, Target, Widget, WidgetExt};
 
-use crate::ui::component::table::make_table;
-
+use super::Screen::{MainGameScreen, RaceScreen};
 use crate::database::config::{get_current_date, update_current_date};
 use crate::database::driver::get_top_driver_standings;
 use crate::database::race::get_next_race;
 use crate::database::teams::{get_own_team_standing, get_top_teams_standings};
 use crate::ui::component::goto::{goto_driver, goto_team};
+use crate::ui::component::table::make_table;
+use crate::ui::{AppState, SET_CURRENT_DATE};
 
-use super::AppState;
-use super::Screen::{MainGameScreen, RaceScreen};
+// Controller to set the current date when the widget is added
+struct InitDateController;
+
+impl<W: Widget<AppState>> Controller<AppState, W> for InitDateController {
+    fn lifecycle(
+        &mut self,
+        child: &mut W,
+        ctx: &mut LifeCycleCtx,
+        event: &LifeCycle,
+        _data: &AppState,
+        _env: &Env,
+    ) {
+        if let LifeCycle::WidgetAdded = event {
+            let current_date = get_current_date().unwrap().to_string();
+            ctx.submit_command(Command::new(SET_CURRENT_DATE, current_date, Target::Auto));
+        }
+        child.lifecycle(ctx, event, _data, _env);
+    }
+}
 
 pub fn build_screen() -> impl Widget<AppState> {
     let current_date = get_current_date().unwrap();
@@ -27,7 +45,7 @@ pub fn build_screen() -> impl Widget<AppState> {
     let new_action_button =
         Button::new("New Action").on_click(move |_ctx, _data: &mut AppState, _env| {
             // Logic for new action
-            if &current_date_clone == &next_race_day_clone {
+            if current_date_clone == next_race_day_clone {
                 _data.current_screen = RaceScreen {
                     race_id: next_race_id,
                 };
@@ -35,7 +53,7 @@ pub fn build_screen() -> impl Widget<AppState> {
                 println!("New action triggered!");
             } else {
                 update_current_date(&next_race_day_clone);
-                //_data.current_screen = MainGameScreen; // TODO: Find out how to update the screen
+                _data.current_date = next_race_day_clone.to_string();
                 _ctx.request_update();
                 println!("New action triggered!");
             }
@@ -132,9 +150,9 @@ pub fn build_screen() -> impl Widget<AppState> {
     column3.add_flex_child(col3_container, 1.0);
 
     let mut column4 = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
-    column4.add_child(Label::new(
-        "Current Date: ".to_owned() + &current_date.to_string(),
-    ));
+    column4.add_child(Label::new(|data: &AppState, _env: &_| {
+        format!("Current Date: {}", data.current_date)
+    }));
     column4.add_child(Label::new(
         "Next Race Date: ".to_owned() + &next_race_day.to_string(),
     ));
@@ -159,4 +177,5 @@ pub fn build_screen() -> impl Widget<AppState> {
         .with_child(Label::new("Main Game Screen"))
         .with_spacer(20.0)
         .with_child(layout)
+        .controller(InitDateController)
 }
