@@ -33,8 +33,9 @@ pub fn build_navbar() -> impl Widget<AppState> {
         ctx.request_update();
     });
 
-    let exit_button = Button::new("Exit Game").on_click(|_ctx, _data: &mut AppState, _env| {
-        std::process::exit(0); // Clean exit
+    let exit_button = Button::new("Exit Game").on_click(|ctx, data: &mut AppState, _env| {
+        data.current_screen = Main; // Return to the main screen
+        ctx.request_update();
     });
 
     // Create left group (home + nav buttons)
@@ -51,9 +52,9 @@ pub fn build_navbar() -> impl Widget<AppState> {
 
     // Align the exit button to the far right with a spacer in between
     Flex::row()
-        .with_flex_child(left_side, 1.0)
-        .with_spacer(90.0)
-        .with_child(exit_button)
-        .padding(10.0)
-        .background(Color::grey8(200))
+    .with_flex_child(left_side, 1.0) // Left side takes up all available space
+    .with_flex_spacer(1.0)          // Spacer takes up remaining space
+    .with_child(exit_button)        // Exit button is placed at the far right
+    .padding(10.0)
+    .background(Color::rgba8(0, 0, 125, 60)) // 80% opacity as 204 in 0-255 range
 }
