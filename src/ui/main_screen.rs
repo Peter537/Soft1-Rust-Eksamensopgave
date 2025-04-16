@@ -4,7 +4,7 @@ use druid::{Widget, WidgetExt};
 use crate::backend::race;
 use crate::util::appdata; // Import the appdata module for file operations
 
-use crate::database::connection::{set_game_number};
+use crate::database::connection::set_game_number;
 use crate::database::teams::get_selected_team;
 
 use super::AppState;
@@ -70,7 +70,9 @@ fn temp_buttons() -> impl Widget<AppState> {
     let team_screen_button =
         Button::new("team_screen").on_click(|_ctx, _data: &mut AppState, _env| {
             println!("team_screen_button clicked!");
-            _data.current_screen = TeamScreen;
+            _data.current_screen = TeamScreen {
+                team_name: "Ferrari".to_string(), // Example team name
+            };
             _ctx.request_update();
         });
 
@@ -84,7 +86,7 @@ fn temp_buttons() -> impl Widget<AppState> {
     let driver_screen_button =
         Button::new("driver_screen").on_click(|_ctx, _data: &mut AppState, _env| {
             println!("driver_screen_button clicked!");
-            _data.current_screen = DriverScreen;
+            _data.current_screen = DriverScreen { driver_name: "Max".to_string()};
             _ctx.request_update();
         });
 

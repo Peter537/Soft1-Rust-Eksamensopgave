@@ -36,9 +36,9 @@ pub enum Screen {
 
     // from nav:
     Leaderboard,
-    TeamScreen,
+    TeamScreen { team_name: String },
     TeamListScreen,
-    DriverScreen,
+    DriverScreen { driver_name: String },
     DriverListScreen,
     RaceScheduleScreen,
 }
@@ -67,9 +67,9 @@ pub fn build_ui() -> impl druid::Widget<AppState> {
 
                 // Nav:
                 Screen::Leaderboard => Box::new(leaderboard_screen::build_screen()),
-                Screen::TeamScreen => Box::new(team_screen::build_screen()),
+                Screen::TeamScreen { team_name } => Box::new(team_screen::build_screen(&team_name)),
                 Screen::TeamListScreen => Box::new(team_list_screen::build_screen()),
-                Screen::DriverScreen => Box::new(driver_screen::build_screen()),
+                Screen::DriverScreen { driver_name } => Box::new(driver_screen::build_screen(&driver_name)),
                 Screen::DriverListScreen => Box::new(driver_list_screen::build_screen()),
                 Screen::RaceScheduleScreen => Box::new(race_schedule_screen::build_screen()),
             }

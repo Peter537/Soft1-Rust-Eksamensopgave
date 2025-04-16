@@ -3,6 +3,7 @@ use druid::Widget;
 
 use crate::database::connection::get_connection;
 use crate::ui::component::table::make_table;
+use crate::ui::component::goto::{goto_driver, goto_team};
 
 use super::AppState;
 use super::Screen::Main;
@@ -21,7 +22,7 @@ pub fn build_screen() -> impl Widget<AppState> {
 
     let data: Vec<Vec<String>> = all_drivers;
     
-    let driver_table = make_table(col, data, vec![]);
+    let driver_table = make_table(col, data, vec![(0, goto_driver()),(4, goto_team())]);
     
     Flex::column()
         .with_spacer(20.0)
@@ -49,7 +50,7 @@ fn get_driver_data() -> Vec<Vec<String>> {
             d.racing_number,
             d.rating,
             c.name AS country,
-            t.full_name AS team
+            t.short_name AS team
         FROM drivers d
         JOIN countries c ON d.fk_country_id = c.id
         LEFT JOIN driver_contracts dc ON dc.fk_driver_id = d.id

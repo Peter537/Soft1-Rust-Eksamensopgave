@@ -14,13 +14,14 @@ pub fn build_screen() -> impl Widget<AppState> {
     let all_teams = get_team_data();
 
     let col = vec![
+        "Short Name".to_string(),
         "Team Name".to_string(),
         "Points".to_string(),
         "Drivers".to_string(),
         "Country".to_string(),
     ];
 
-    let driver_table = make_table(col, all_teams, vec![(0, goto_team()), (2, goto_driver())]);
+    let driver_table = make_table(col, all_teams, vec![(0, goto_team()), (3, goto_driver())]);
 
     Flex::column()
         .with_spacer(20.0)
@@ -43,6 +44,7 @@ pub fn get_team_data() -> Vec<Vec<String>> {
     let mut stmt = conn.prepare(
         r#"
         SELECT 
+            t.short_name,
             t.full_name,
             COALESCE((
                 SELECT SUM(rdr.points)
@@ -65,12 +67,14 @@ pub fn get_team_data() -> Vec<Vec<String>> {
     ).unwrap();
 
     let team_iter = stmt.query_map([], |row| {
-        let team_name: String = row.get(0)?;
-        let points: i32 = row.get(1)?;
-        let drivers: Option<String> = row.get(2)?; // GROUP_CONCAT may return NULL
-        let country: String = row.get(3)?;
+        let short_name: String = row.get(0)?;
+        let team_name: String = row.get(1)?;
+        let points: i32 = row.get(2)?;
+        let drivers: Option<String> = row.get(3)?; // GROUP_CONCAT may return NULL
+        let country: String = row.get(4)?;
 
         Ok(vec![
+            short_name,
             team_name,
             points.to_string(),
             drivers.unwrap_or_default().replace(",", ", "), // Empty string if no drivers

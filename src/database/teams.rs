@@ -1,4 +1,4 @@
-use crate::database::connection::get_connection;
+use crate::{database::connection::get_connection, model::team::Team};
 use std::collections::HashMap;
 
 pub fn get_all_teams() -> Vec<(String, String, Vec<(String, String)>)> {
@@ -191,5 +191,42 @@ pub fn get_top_teams_standings(limit: Option<i32>) -> Option<Vec<(i32, String, i
         None
     } else {
         Some(standings)
+    }
+}
+
+
+pub fn get_team_info(short_name: &str) -> Option<Team> {
+    let conn = get_connection().unwrap();
+    let mut stmt = conn
+        .prepare(
+            r#"
+            SELECT 
+                id, short_name, full_name, fk_country_id, base_city, first_entry, 
+                team_chief, chassis, power_unit, image_team, image_car
+            FROM teams
+            WHERE short_name = ?
+            "#,
+        )
+        .unwrap();
+
+    let mut rows = stmt.query([short_name]).unwrap();
+
+    if let Some(row) = rows.next().unwrap() {
+        let team = Team {
+            id: row.get(0).unwrap(),
+            short_name: row.get(1).unwrap(),
+            full_name: row.get(2).unwrap(),
+            country_id: row.get(3).unwrap(),
+            base_city: row.get(4).unwrap(),
+            first_entry: row.get(5).unwrap(),
+            team_chief: row.get(6).unwrap(),
+            chassis: row.get(7).unwrap(),
+            power_unit: row.get(8).unwrap(),
+            image_path_logo: row.get(9).unwrap(),
+            image_path_car: row.get(10).unwrap(),
+        };
+        Some(team)
+    } else {
+        None
     }
 }
