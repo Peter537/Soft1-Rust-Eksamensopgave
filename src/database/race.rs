@@ -2,6 +2,8 @@ use crate::database::connection::get_connection;
 use crate::model::lap::Lap;
 use crate::model::race_driver_result::RaceDriverResult;
 use crate::model::season_schedule::SeasonSchedule;
+use crate::model::circuit::CircuitInfo;
+use crate::model::race_driver_result::RaceResult;
 
 use rusqlite::named_params;
 
@@ -136,4 +138,69 @@ pub fn get_next_race() -> Option<SeasonSchedule> {
         Ok(season_schedule) => Some(season_schedule),
         Err(_) => None,
     }
+}
+
+pub fn get_circuit_info(race_id: &i32) -> Option<CircuitInfo> {
+    let conn = get_connection().unwrap();
+
+    let mut stmt = conn.prepare(
+        r#"
+        SELECT 
+            c.name AS CircuitName,
+            (c.city || ', ' || co.name) AS Location,
+            c.length_km AS LengthOfCircuit,
+            c.lap_amount AS LapAmount,
+            c.image_circuit AS ImagePath
+        FROM season_schedules ss
+        JOIN circuits c ON ss.fk_circuit_id = c.id
+        JOIN countries co ON c.fk_country_id = co.id
+        WHERE ss.id = ?
+        "#,
+    ).unwrap();
+
+    let circuit = stmt.query_row([&race_id], |row| {
+        Ok(CircuitInfo {
+            circuit_name: row.get(0)?,
+            location: row.get(1)?,
+            length_km: row.get(2)?,
+            lap_amount: row.get(3)?,
+            image_path: row.get(4)?,
+        })
+    }).unwrap();
+
+    Some(circuit)
+}
+
+fn get_race_results(race_id: i32) -> Option<RaceResult> {
+    let conn = get_connection().unwrap();
+    
+    let mut stmt = conn.prepare(
+        r#"
+        SELECT 
+            rdr.placement AS Position,
+            d.racing_number AS DriverNumber,
+            (d.first_name || ' ' || d.last_name) AS DriverName,
+            t.full_name AS Team,
+            MIN(l.lap_time_ms) AS FastestLapTime_ms
+        FROM race_driver_results rdr
+        JOIN drivers d ON rdr.fk_driver_id = d.id
+        JOIN teams t ON rdr.fk_team_id = t.id
+        LEFT JOIN laps l ON l.fk_race_driver_result_id = rdr.id
+        WHERE rdr.fk_season_schedule_id = ?
+        GROUP BY rdr.id, d.id, t.id
+        ORDER BY rdr.placement ASC
+        "#,
+    ).unwrap();
+
+    let result = stmt.query_row([race_id], |row| {
+        Ok(RaceResult {
+            position: row.get(0)?,
+            driver_number: row.get(1)?,
+            driver_name: row.get(2)?,
+            team: row.get(3)?,
+            fastest_lap_time_ms: row.get(4)?,
+        })
+    }).unwrap();
+
+    Some(result)
 }
