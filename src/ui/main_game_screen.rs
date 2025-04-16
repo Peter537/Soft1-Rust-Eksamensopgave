@@ -45,15 +45,19 @@ pub fn build_screen() -> impl Widget<AppState> {
     let new_action_button =
         Button::new("New Action").on_click(move |_ctx, _data: &mut AppState, _env| {
             // Logic for new action
-            if current_date_clone == next_race_day_clone {
+            let next_race = get_next_race().unwrap();
+            let next_race_day = NaiveDate::parse_from_str(&next_race.date, "%Y-%m-%d")
+                .ok()
+                .unwrap();
+            if get_current_date().unwrap() == next_race_day {
                 _data.current_screen = RaceScreen {
                     race_id: next_race_id,
                 };
                 _ctx.request_update();
                 println!("New action triggered!");
             } else {
-                update_current_date(&next_race_day_clone);
-                _data.current_date = next_race_day_clone.to_string();
+                update_current_date(&next_race_day);
+                _data.current_date = next_race_day.to_string();
                 _ctx.request_update();
                 println!("New action triggered!");
             }
