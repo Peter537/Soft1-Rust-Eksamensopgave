@@ -100,7 +100,9 @@ pub fn build_ui() -> impl druid::Widget<AppState> {
                         .with_child(toast_button)
                         .with_child(build_toast());
 
-                    Box::new(main_content) // No navbar for the Main screen
+                    ZStack::new(main_content)
+                        .with_child(build_modal(), Vec2::new(200.0, 200.0), Vec2::new(0.0, 0.0), UnitPoint::CENTER, Vec2::new(0.0, 0.0))
+                        .boxed()
                 }
                 Screen::TeamScreen { team_name } => {
                     Box::new(with_navbar(team_screen::build_screen(&team_name)))

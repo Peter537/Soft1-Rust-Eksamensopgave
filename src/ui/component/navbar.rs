@@ -1,15 +1,15 @@
 use druid::widget::{Button, Flex };
 use druid::{Color, Widget, WidgetExt};
 
-use crate::ui::AppState;
+use crate::ui::{main_game_screen, AppState};
 use crate::ui::Screen::{
-    DriverListScreen, Leaderboard, Main, RaceScheduleScreen, TeamListScreen,
+    DriverListScreen, Leaderboard, Main, RaceScheduleScreen, TeamListScreen, MainGameScreen,
 };
 
 pub fn build_navbar() -> impl Widget<AppState> {
         
     let home_button = Button::new("🏠").on_click(|ctx, data: &mut AppState, _env| {
-        data.current_screen = Main;
+        data.current_screen = MainGameScreen;
         ctx.request_update();
     });
 
