@@ -1,5 +1,6 @@
 use crate::{database::connection::get_connection, model::team::Team};
 use std::collections::HashMap;
+use crate::model::season::{RaceInfo, SeasonInfo};
 
 pub fn get_all_teams() -> Vec<(String, String, Vec<(String, String)>)> {
     let conn = get_connection().unwrap();
@@ -246,4 +247,144 @@ pub fn get_team_id_by_short_name(short_name: &str) -> Option<i32> {
     } else {
         Some(team_id)
     }
+}
+
+pub fn get_team_season_info(team_id: i32, season_year: i32) -> Option<SeasonInfo> {
+    // Establish a single connection
+    let conn = match get_connection() {
+        Ok(conn) => conn,
+        Err(_) => return None, // Connection failed
+    };
+
+    // Get season ID
+    let season_id: i32 = match conn.query_row(
+        "SELECT id FROM seasons WHERE year = ?1",
+        [season_year],
+        |row| row.get(0),
+    ) {
+        Ok(id) => id,
+        Err(_) => return None, // Season not found
+    };
+
+    // Query to get race details and team results
+    let mut race_stmt = match conn.prepare(
+        r#"
+        SELECT 
+            ss.grand_prix_name,
+            ss.date,
+            rdr.placement,
+            rdr.points
+        FROM season_schedules ss
+        JOIN race_driver_results rdr ON ss.id = rdr.fk_season_schedule_id
+        WHERE ss.fk_season_id = ?1 AND rdr.fk_team_id = ?2
+        ORDER BY ss.date
+        "#,
+    ) {
+        Ok(stmt) => stmt,
+        Err(_) => return None, // Query preparation failed
+    };
+
+    let race_rows = match race_stmt.query_map([season_id, team_id], |row| {
+        Ok((
+            row.get::<_, String>(0)?,      // grand_prix_name
+            row.get::<_, String>(1)?,      // date
+            row.get::<_, Option<i32>>(2)?, // placement (can be NULL if DNF)
+            row.get::<_, i32>(3)?,         // points
+        ))
+    }) {
+        Ok(rows) => rows,
+        Err(_) => return None, // Query execution failed
+    };
+
+    // Aggregate race results
+    let mut races: Vec<RaceInfo> = Vec::new();
+    let mut race_map: HashMap<String, (String, Vec<i32>, i32)> = HashMap::new();
+
+    for row in race_rows {
+        let (grand_prix_name, date, placement, points) = match row {
+            Ok(row) => row,
+            Err(_) => continue, // Skip invalid rows
+        };
+        let entry = race_map
+            .entry(grand_prix_name.clone())
+            .or_insert((date, Vec::new(), 0));
+
+        // Add placement if not NULL (exclude DNF or invalid placements)
+        if let Some(pos) = placement {
+            entry.1.push(pos);
+        }
+        // Add points
+        entry.2 += points;
+    }
+
+    // Convert HashMap to Vec<RaceInfo>
+    for (grand_prix_name, (date, team_positions, race_points)) in race_map {
+        races.push(RaceInfo {
+            grand_prix_name,
+            date,
+            team_positions,
+            race_points,
+        });
+    }
+
+    // Sort races by date
+    races.sort_by(|a, b| a.date.cmp(&b.date));
+
+    // Calculate total points for the team
+    let total_points: i32 = races.iter().map(|r| r.race_points).sum();
+
+    // Query to get total points for all teams and calculate position
+    let mut team_points_stmt = match conn.prepare(
+        r#"
+        SELECT rdr.fk_team_id, SUM(rdr.points) as total_points
+        FROM race_driver_results rdr
+        JOIN season_schedules ss ON rdr.fk_season_schedule_id = ss.id
+        WHERE ss.fk_season_id = ?1
+        GROUP BY rdr.fk_team_id
+        ORDER BY total_points DESC
+        "#,
+    ) {
+        Ok(stmt) => stmt,
+        Err(_) => return None, // Query preparation failed
+    };
+
+    let team_points_rows = match team_points_stmt.query_map([season_id], |row| {
+        Ok((row.get::<_, i32>(0)?, row.get::<_, i32>(1)?)) // (team_id, total_points)
+    }) {
+        Ok(rows) => rows,
+        Err(_) => return None, // Query execution failed
+    };
+
+    let mut team_points_list: Vec<(i32, i32)> = Vec::new();
+    for row in team_points_rows {
+        match row {
+            Ok((tid, points)) => team_points_list.push((tid, points)),
+            Err(_) => continue, // Skip invalid rows
+        }
+    }
+
+    // Calculate overall position
+    let mut overall_position = 1;
+    let mut found_team = false;
+    for (tid, points) in team_points_list {
+        if tid == team_id {
+            found_team = true;
+            break;
+        }
+        if points > total_points {
+            overall_position += 1;
+        }
+    }
+
+    // If team not found in results, return None
+    if !found_team {
+        return None;
+    }
+
+    Some(SeasonInfo {
+        season_year,
+        total_points,
+        overall_position,
+        races,
+    })
 }

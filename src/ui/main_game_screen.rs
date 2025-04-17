@@ -63,8 +63,8 @@ pub fn build_screen() -> impl Widget<AppState> {
             }
         });
 
-    let cols = vec!["1".to_string(), "2".to_string()];
-    let data = vec![vec!["x".to_string(), "x".to_string()]];
+    let cols = vec!["Race".to_string(), "Winner".to_string(), "MyTeam Position".to_string()];
+    let data = vec![vec!["x".to_string(), "x".to_string(), "x".to_string()]];
 
     let race_list = make_table(cols, data, vec![]);
 
