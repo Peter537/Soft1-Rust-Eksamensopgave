@@ -74,10 +74,7 @@ pub fn make_table(
     // Header row with borders
     let mut header_row = Flex::row();
     for (i, header) in column.iter().enumerate() {
-        header_row.add_child(bordered_cell(
-            Label::new(header.clone()),
-            col_widths[i],
-        ));
+        header_row.add_child(bordered_cell(Label::new(header.clone()), col_widths[i]));
     }
     table.add_child(header_row);
     table.add_spacer(8.0);
@@ -95,10 +92,8 @@ pub fn make_table(
                 row_container.add_child(bordered_cell(cell_widget, col_widths[col_idx]));
             } else {
                 // Non-clickable cell
-                row_container.add_child(bordered_cell(
-                    Label::new(cell.clone()),
-                    col_widths[col_idx],
-                ));
+                row_container
+                    .add_child(bordered_cell(Label::new(cell.clone()), col_widths[col_idx]));
             }
         }
         table.add_child(row_container);
@@ -108,10 +103,7 @@ pub fn make_table(
     table
 }
 
-fn bordered_cell<W: Widget<AppState> + 'static>(
-    child: W,
-    width: f64,
-) -> impl Widget<AppState> {
+fn bordered_cell<W: Widget<AppState> + 'static>(child: W, width: f64) -> impl Widget<AppState> {
     Container::new(child.padding(4.0))
         .border(Color::grey(0.6), 1.0)
         .fix_width(width)
@@ -121,7 +113,7 @@ fn bordered_cell<W: Widget<AppState> + 'static>(
 // Calculate the maximum width for each column based on character length
 fn calculate_column_widths(column: &[String], data: &[Vec<String>]) -> Vec<f64> {
     let mut widths = vec![0; column.len()];
-    
+
     // Check header widths
     for (i, header) in column.iter().enumerate() {
         widths[i] = header.len();
@@ -136,7 +128,10 @@ fn calculate_column_widths(column: &[String], data: &[Vec<String>]) -> Vec<f64> 
 
     // Convert character lengths to pixel widths (approximate)
     // Adjust the multiplier based on font size and desired spacing
-    widths.into_iter().map(|len| (len as f64) * 8.0 + 16.0).collect()
+    widths
+        .into_iter()
+        .map(|len| (len as f64) * 8.0 + 16.0)
+        .collect()
 }
 
 fn validate_data(col_size: usize, data: &Vec<Vec<String>>) -> bool {

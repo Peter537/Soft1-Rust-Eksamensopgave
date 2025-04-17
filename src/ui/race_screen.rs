@@ -4,11 +4,11 @@ use druid::{Color, Widget, WidgetExt};
 use super::AppState;
 use super::Screen::{Main, MainGameScreen};
 
-use crate::backend::race::start_race;
-use crate::model::circuit::CircuitInfo;
 use super::component::table::make_table;
-use crate::util::image_loader::get_circuit;
+use crate::backend::race::start_race;
 use crate::database::race::get_circuit_info;
+use crate::model::circuit::CircuitInfo;
+use crate::util::image_loader::get_circuit;
 
 pub fn build_screen(race_id: i32) -> impl Widget<AppState> {
     println!("race_id: {}", &race_id.to_string());
@@ -65,11 +65,18 @@ pub fn build_screen(race_id: i32) -> impl Widget<AppState> {
 }
 
 fn race_result() -> impl Widget<AppState> {
-
-    let race_cols = vec!["Position".to_string(), "DriverNumber".to_string(), "DriverName".to_string(), "Team".to_string(), "Lap Time".to_string(), "Points".to_string()];
+    let race_cols = vec![
+        "Position".to_string(),
+        "DriverNumber".to_string(),
+        "DriverName".to_string(),
+        "Team".to_string(),
+        "Lap Time".to_string(),
+        "Points".to_string(),
+    ];
 
     // make dommain for the table if empty
-    let data: Vec<Vec<String>> = race_cols.iter()
+    let data: Vec<Vec<String>> = race_cols
+        .iter()
         .map(|_| vec!["".to_string(); race_cols.len()])
         .collect();
 
@@ -83,13 +90,19 @@ fn race_result() -> impl Widget<AppState> {
 }
 
 fn circuit_info(id: &i32) -> (impl Widget<AppState>, impl Widget<AppState>) {
-    
     let circuit_data: CircuitInfo = get_circuit_info(&id).unwrap();
-    let img: String = circuit_data.image_path.as_deref().unwrap_or("No Image").to_string();
+    let img: String = circuit_data
+        .image_path
+        .as_deref()
+        .unwrap_or("No Image")
+        .to_string();
 
     let circuit_info: Container<AppState> = Container::new(
         Flex::column()
-            .with_child(Label::new(format!("Circuit: {}", circuit_data.circuit_name)))
+            .with_child(Label::new(format!(
+                "Circuit: {}",
+                circuit_data.circuit_name
+            )))
             .with_spacer(20.0)
             .with_child(Label::new(format!("Location: {}", circuit_data.location)))
             .with_spacer(20.0)
@@ -101,5 +114,8 @@ fn circuit_info(id: &i32) -> (impl Widget<AppState>, impl Widget<AppState>) {
     .padding(10.0)
     .border(Color::grey(0.5), 1.0);
 
-    (get_circuit(&img).fix_width(400.0).fix_height(400.0), circuit_info)
+    (
+        get_circuit(&img).fix_width(400.0).fix_height(400.0),
+        circuit_info,
+    )
 }

@@ -140,12 +140,14 @@ pub fn get_top_driver_standings(limit: Option<i32>) -> Option<Vec<(i32, String, 
     let mut stmt = conn.prepare(&final_query).unwrap();
 
     // Unified query_map logic
-    let rows = stmt.query_map([], |row| {
-        Ok((
-            row.get::<_, String>(0)?, // driver_name
-            row.get::<_, i32>(1)?,    // total_points
-        ))
-    }).unwrap();
+    let rows = stmt
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?, // driver_name
+                row.get::<_, i32>(1)?,    // total_points
+            ))
+        })
+        .unwrap();
 
     let mut standings: Vec<(i32, String, i32)> = Vec::new();
     let mut position = 1;

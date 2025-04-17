@@ -194,7 +194,6 @@ pub fn get_top_teams_standings(limit: Option<i32>) -> Option<Vec<(i32, String, i
     }
 }
 
-
 pub fn get_team_info(short_name: &str) -> Option<Team> {
     let conn = get_connection().unwrap();
     let mut stmt = conn
