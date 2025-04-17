@@ -16,11 +16,12 @@ pub fn build_screen() -> impl Widget<AppState> {
         "Short Name".to_string(),
         "Team Name".to_string(),
         "Points".to_string(),
-        "Drivers".to_string(),
+        "Driver 1".to_string(),
+        "Driver 2".to_string(),
         "Country".to_string(),
     ];
 
-    let driver_table = make_table(col, all_teams, vec![(0, goto_team()), (3, goto_driver())]);
+    let driver_table = make_table(col, all_teams, vec![(0, goto_team()), (3, goto_driver()), (4, goto_driver())]);
 
     Flex::column()
         .with_spacer(20.0)
@@ -51,11 +52,12 @@ pub fn get_team_data() -> Vec<Vec<String>> {
                 WHERE rdr.fk_team_id = t.id
             ), 0) AS total_points,
             (
-                SELECT GROUP_CONCAT(d2.first_name || ' ' || d2.last_name)
+                SELECT GROUP_CONCAT(d2.first_name || ' ' || d2.last_name, ',')
                 FROM driver_contracts dc2
                 JOIN drivers d2 ON dc2.fk_driver_id = d2.id
                 WHERE dc2.fk_team_id = t.id
                 AND (dc2.date_end IS NULL OR dc2.date_end > strftime('%s', 'now') * 1000)
+                ORDER BY d2.last_name
             ) AS drivers,
             c.name AS country
         FROM teams t
@@ -74,11 +76,22 @@ pub fn get_team_data() -> Vec<Vec<String>> {
             let drivers: Option<String> = row.get(3)?; // GROUP_CONCAT may return NULL
             let country: String = row.get(4)?;
 
+            let driver1 = drivers
+                .as_ref()
+                .and_then(|d| d.split(',').next())
+                .unwrap_or("");
+
+            let driver2 = drivers
+                .as_ref()
+                .and_then(|d| d.split(',').nth(1))
+                .unwrap_or("");
+            
             Ok(vec![
                 short_name,
                 team_name,
                 points.to_string(),
-                drivers.unwrap_or_default().replace(",", ", "), // Empty string if no drivers
+                driver1.to_string(),
+                driver2.to_string(),
                 country,
             ])
         })
