@@ -7,10 +7,10 @@ use super::Screen::Main;
 use crate::ui::component::table::make_table;
 use crate::util::image_loader::get_driver;
 
-use crate::database::driver::get_driver_by_firstname;
+use crate::database::driver::get_driver_by_id;
 
-pub fn build_screen(driver_name: &String) -> impl Widget<AppState> {
-    let driver = match get_driver_by_firstname(driver_name) {
+pub fn build_screen(driver_id: &i32) -> impl Widget<AppState> {
+    let driver = match get_driver_by_id(driver_id) {
         Some(driver) => driver,
         None => {
             println!("Driver not found!");

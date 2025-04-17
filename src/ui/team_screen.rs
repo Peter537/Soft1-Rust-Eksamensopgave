@@ -2,17 +2,18 @@ use druid::widget::{Button, CrossAxisAlignment, Flex, Label, MainAxisAlignment};
 use druid::Widget;
 
 use crate::database::teams::get_team_info;
+use crate::model::team;
 use crate::ui::component::table::make_table;
 use crate::util::image_loader::get_team;
 
 use super::AppState;
 use super::Screen::Main;
 
-pub fn build_screen(team_name: &String) -> impl Widget<AppState> {
+pub fn build_screen(team_name: &i32) -> impl Widget<AppState> {
     println!("Building team screen for {}", team_name);
-    let team_name_display = team_name.replace("_", " ");
+    // let team_name_display = team_name.replace("_", " ");
 
-    let team_info = match get_team_info(&team_name_display) {
+    let team_info = match get_team_info(&team_name) {
         Some(info) => info,
         None => {
             println!("Team not found!");
@@ -46,7 +47,7 @@ pub fn build_screen(team_name: &String) -> impl Widget<AppState> {
     left_column.add_child(results_table);
 
     let mut right_column = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
-    right_column.add_child(get_team(team_name));
+    right_column.add_child(get_team(&team_info.image_path_logo));
     right_column.add_spacer(5.0);
     right_column.add_child(Label::new("Team Info"));
     right_column.add_spacer(5.0);
@@ -80,7 +81,7 @@ pub fn build_screen(team_name: &String) -> impl Widget<AppState> {
         .with_spacer(40.0);
 
     Flex::column()
-        .with_child(Label::new(format!("Team: {}", team_name_display)).with_text_size(30.0))
+        .with_child(Label::new(format!("Team: {}", team_info.short_name)).with_text_size(30.0))
         .with_spacer(20.0)
         .with_child(Label::new("Team Screen"))
         .with_child(

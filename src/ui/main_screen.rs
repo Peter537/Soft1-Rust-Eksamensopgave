@@ -70,7 +70,7 @@ fn temp_buttons() -> impl Widget<AppState> {
         Button::new("team_screen").on_click(|_ctx, _data: &mut AppState, _env| {
             println!("team_screen_button clicked!");
             _data.current_screen = TeamScreen {
-                team_name: "Ferrari".to_string(), // Example team name
+                team_id: 1, // Replace with the actual team ID or name
             };
             _ctx.request_update();
         });
@@ -86,7 +86,7 @@ fn temp_buttons() -> impl Widget<AppState> {
         Button::new("driver_screen").on_click(|_ctx, _data: &mut AppState, _env| {
             println!("driver_screen_button clicked!");
             _data.current_screen = DriverScreen {
-                driver_name: "Max".to_string(),
+                driver_id: 1, // Replace with the actual team ID or name
             };
             _ctx.request_update();
         });

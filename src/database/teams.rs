@@ -194,7 +194,7 @@ pub fn get_top_teams_standings(limit: Option<i32>) -> Option<Vec<(i32, String, i
     }
 }
 
-pub fn get_team_info(short_name: &str) -> Option<Team> {
+pub fn get_team_info(team_id: &i32) -> Option<Team> {
     let conn = get_connection().unwrap();
     let mut stmt = conn
         .prepare(
@@ -203,12 +203,12 @@ pub fn get_team_info(short_name: &str) -> Option<Team> {
                 id, short_name, full_name, fk_country_id, base_city, first_entry, 
                 team_chief, chassis, power_unit, image_team, image_car
             FROM teams
-            WHERE short_name = ?
+            WHERE id = ?
             "#,
         )
         .unwrap();
 
-    let mut rows = stmt.query([short_name]).unwrap();
+    let mut rows = stmt.query([team_id]).unwrap();
 
     if let Some(row) = rows.next().unwrap() {
         let team = Team {
@@ -227,5 +227,23 @@ pub fn get_team_info(short_name: &str) -> Option<Team> {
         Some(team)
     } else {
         None
+    }
+}
+
+pub fn get_team_id_by_short_name(short_name: &str) -> Option<i32> {
+    let conn = get_connection().unwrap();
+    let mut stmt = conn
+        .prepare("SELECT id FROM teams WHERE short_name = ?")
+        .unwrap();
+
+    let team_id: i32 = stmt
+        .query_row([short_name], |row| row.get(0))
+        .unwrap_or(-1);
+
+    if team_id == -1 {
+        println!("Team with short name: '{}' not found", short_name);
+        None
+    } else {
+        Some(team_id)
     }
 }
