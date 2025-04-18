@@ -10,8 +10,9 @@ pub struct RaceDriverResult {
 
 pub struct RaceResult {
     pub position: i32,
-    pub driver_number: String,
+    pub driver_number: i32,
     pub driver_name: String,
     pub team: String,
-    pub fastest_lap_time_ms: i32,
+    pub points: i32,
+    pub total_time_ms: f64,
 }

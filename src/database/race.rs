@@ -177,42 +177,46 @@ pub fn get_circuit_info(race_id: &i32) -> Option<CircuitInfo> {
     Some(circuit)
 }
 
-fn get_race_results(race_id: i32) -> Option<RaceResult> {
+pub fn get_race_results(race_id: &i32) -> Vec<RaceResult> {
     let conn = get_connection().unwrap();
-
     let mut stmt = conn
         .prepare(
             r#"
-        SELECT 
-            rdr.placement AS Position,
-            d.racing_number AS DriverNumber,
-            (d.first_name || ' ' || d.last_name) AS DriverName,
-            t.full_name AS Team,
-            MIN(l.lap_time_ms) AS FastestLapTime_ms
-        FROM race_driver_results rdr
-        JOIN drivers d ON rdr.fk_driver_id = d.id
-        JOIN teams t ON rdr.fk_team_id = t.id
-        LEFT JOIN laps l ON l.fk_race_driver_result_id = rdr.id
-        WHERE rdr.fk_season_schedule_id = ?
-        GROUP BY rdr.id, d.id, t.id
-        ORDER BY rdr.placement ASC
-        "#,
+            SELECT 
+                rdr.placement AS Position,
+                d.racing_number AS DriverNumber,
+                (d.first_name || ' ' || d.last_name) AS DriverName,
+                t.full_name AS Team,
+                rdr.points AS Points,
+                COALESCE(SUM(l.lap_time_ms), 0) AS TotalTime_ms
+                --0 AS TotalTime_ms
+            FROM race_driver_results rdr
+            JOIN drivers d ON rdr.fk_driver_id = d.id
+            JOIN teams t ON rdr.fk_team_id = t.id
+            LEFT JOIN laps l ON l.fk_race_driver_result_id = rdr.id
+            WHERE rdr.fk_season_schedule_id = ?
+            GROUP BY rdr.id, d.id, t.id
+            ORDER BY rdr.placement ASC
+            "#,
         )
         .unwrap();
 
-    let result = stmt
-        .query_row([race_id], |row| {
+    let results: Vec<RaceResult> = stmt
+        .query_map(&[race_id], |row| {
             Ok(RaceResult {
                 position: row.get(0)?,
                 driver_number: row.get(1)?,
                 driver_name: row.get(2)?,
                 team: row.get(3)?,
-                fastest_lap_time_ms: row.get(4)?,
+                points: row.get(4)?,
+                total_time_ms: row.get(5)?,
             })
         })
-        .unwrap();
+        .unwrap()
+        .filter_map(Result::ok)
+        .collect();
 
-    Some(result)
+    results
 }
 
 
