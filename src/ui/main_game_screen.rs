@@ -2,7 +2,8 @@ use chrono::NaiveDate;
 use druid::widget::{Button, Controller, CrossAxisAlignment, Flex, Label, MainAxisAlignment};
 use druid::{Command, Env, LifeCycle, LifeCycleCtx, Target, Widget, WidgetExt};
 
-use super::Screen::{RaceScreen};
+use super::component::goto::goto_race;
+use super::Screen::RaceScreen;
 use crate::database::config::{get_current_date, update_current_date};
 use crate::database::driver::get_top_driver_standings;
 use crate::database::race::{get_next_race, get_race_list};
@@ -63,17 +64,29 @@ pub fn build_screen() -> impl Widget<AppState> {
             }
         });
 
-
     let race_list = get_race_list().unwrap();
 
-    let cols = vec!["Race".to_string(), "Winner".to_string(), "MyTeam Position".to_string()];
-    let data = race_list.iter().map(|race| {
-        let (grand_prix_name, winner_name, my_team_position) = race;
-        
-        vec![grand_prix_name.clone(), winner_name.clone(), my_team_position.clone()]
-    }).collect::<Vec<Vec<String>>>();
+    let cols = vec![
+        "Date".to_string(),
+        "Race".to_string(),
+        "Winner".to_string(),
+        "MyTeam Position".to_string(),
+    ];
+    let data = race_list
+        .iter()
+        .map(|race| {
+            let (date, grand_prix_name, winner_name, my_team_position) = race;
 
-    let race_list = make_table(cols, data, vec![]);
+            vec![
+                date.clone(),
+                grand_prix_name.clone(),
+                winner_name.clone(),
+                my_team_position.clone(),
+            ]
+        })
+        .collect::<Vec<Vec<String>>>();
+
+    let race_list = make_table(cols, data, vec![(1, goto_race()), (2, goto_driver())]);
 
     let mut column1 = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
     column1.add_child(Label::new("Race List").with_text_size(20.0));
