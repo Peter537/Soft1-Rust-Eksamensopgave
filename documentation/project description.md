@@ -53,13 +53,15 @@
 
 ### 1 Error Handling and Enums
 
+Ift. Result<>, så kan vi bruge det til når der kan ske fejl, ex. ved `/util/image_loader.rs` hvis billede-lokationen ikke eksisterer.
+
+Ift. Option<>, så kan vi bruge det i database-metoderne hvis nu der ikke er nogen data i databasen.
+
 ### 2. Ownership and Borrowing Concepts
 
 ### 3. Strings and String Handling in Rust
 
 ### 4. Polymorphism
-
-We should probably make an interface for the Screens so we enforce a method called `build_screen`
 
 ### 5. Memory Management
 
@@ -69,10 +71,16 @@ Vi bruger f.eks. pattern-matching i mod.rs' `build_ui` for at vælge hvilken UI 
 
 ### 7. Structs and Data Organization
 
+Vi bruger Structs når vi henter noget ud fra databasen.
+
+Vi bruger Tuples/Arrays når det er små-ting inde i koden som skal flyttes rundt på.
+
 ### 8. Module System and Code Organization
 
 In each directory, we have a file `mod.rs` which is the entry point for that directory.
 
+Vi har en `mod.rs` fil i hver mappe, som er entry-pointet for den mappe. Inde i den fil vælger vi så hvad som andre mapper skal have adgang til (ved `pub mod`), og hvad skal være privat for mappen (ved `mod`).
+
 ### 9. Concurrency in Rust
 
-We can you concurrency to simulate the race-laps
+Vi bruger Mutex i database-connection håndteringen.
