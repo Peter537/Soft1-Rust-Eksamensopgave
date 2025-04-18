@@ -7,6 +7,8 @@ use crate::model::season_schedule::SeasonSchedule;
 
 use std::collections::HashMap;
 
+use chrono::Date;
+use chrono::NaiveDate;
 use rusqlite::named_params;
 
 pub fn get_season_schedule_by_id(season_schedule_id: i32) -> Option<SeasonSchedule> {
@@ -30,6 +32,21 @@ pub fn get_season_schedule_by_id(season_schedule_id: i32) -> Option<SeasonSchedu
     });
     match row {
         Ok(season_schedule) => Some(season_schedule),
+        Err(_) => None,
+    }
+}
+
+pub fn get_race_id_by_grandprix_name(grand_prix_name: &str) -> Option<i32> {
+    let conn = get_connection().unwrap();
+    let mut stmt = conn
+        .prepare("SELECT id FROM season_schedules WHERE grand_prix_name = ?")
+        .unwrap();
+    let row = stmt.query_row([grand_prix_name], |row| {
+        let id: i32 = row.get(0)?;
+        Ok(id)
+    });
+    match row {
+        Ok(id) => Some(id),
         Err(_) => None,
     }
 }
@@ -219,8 +236,7 @@ pub fn get_race_results(race_id: &i32) -> Vec<RaceResult> {
     results
 }
 
-
-pub fn get_race_list() -> Option<Vec<(String, String, String)>> {
+pub fn get_race_list() -> Option<Vec<(String, String, String, String)>> {
     let conn = match get_connection() {
         Ok(conn) => conn,
         Err(_) => return None, // Connection failed
@@ -240,13 +256,14 @@ pub fn get_race_list() -> Option<Vec<(String, String, String)>> {
     let mut race_stmt = match conn.prepare(
         r#"
         SELECT 
+            ss.date AS date,
             ss.id AS schedule_id,
             ss.grand_prix_name,
             d.first_name || ' ' || d.last_name AS winner_name
         FROM season_schedules ss
         LEFT JOIN race_driver_results rdr ON ss.id = rdr.fk_season_schedule_id AND rdr.placement = 1
         LEFT JOIN drivers d ON rdr.fk_driver_id = d.id
-        ORDER BY CASE WHEN d.first_name IS NOT NULL THEN 0 ELSE 1 END, ss.date
+        ORDER BY ss.date
         "#,
     ) {
         Ok(stmt) => stmt,
@@ -255,9 +272,10 @@ pub fn get_race_list() -> Option<Vec<(String, String, String)>> {
 
     let race_rows = match race_stmt.query_map([], |row| {
         Ok((
-            row.get::<_, i32>(0)?,         // schedule_id
-            row.get::<_, String>(1)?,      // grand_prix_name
-            row.get::<_, Option<String>>(2)?, // winner_name (NULL for future races)
+            row.get::<_, String>(0)?,         // date
+            row.get::<_, i32>(1)?,            // schedule_id
+            row.get::<_, String>(2)?,         // grand_prix_name
+            row.get::<_, Option<String>>(3)?, // winner_name (NULL for future races)
         ))
     }) {
         Ok(rows) => rows,
@@ -290,18 +308,19 @@ pub fn get_race_list() -> Option<Vec<(String, String, String)>> {
         Err(_) => return None, // Query execution failed
     };
 
-    // Aggregate race details
-    let mut race_map: HashMap<i32, (String, String, Vec<i32>)> = HashMap::new();
+    // Aggregate race details with date
+    let mut race_map: HashMap<i32, (String, String, String, Vec<i32>)> = HashMap::new();
     for row in race_rows {
-        let (schedule_id, grand_prix_name, winner_name) = match row {
+        let (date, schedule_id, grand_prix_name, winner_name) = match row {
             Ok(row) => row,
             Err(_) => continue, // Skip invalid rows
         };
         race_map.insert(
             schedule_id,
             (
+                date,
                 grand_prix_name,
-                winner_name.unwrap_or("TBD".to_string()), // "TBD" for future races
+                winner_name.unwrap_or("TBD".to_string()),
                 Vec::new(),
             ),
         );
@@ -315,18 +334,17 @@ pub fn get_race_list() -> Option<Vec<(String, String, String)>> {
         };
         if let Some(entry) = race_map.get_mut(&schedule_id) {
             if let Some(pos) = placement {
-                if entry.2.len() < 2 {
-                    // Only add up to two positions
-                    entry.2.push(pos);
+                if entry.3.len() < 2 {
+                    entry.3.push(pos);
                 }
             }
         }
     }
 
-    // Convert to Vec<(String, String, String)>
-    let mut race_list: Vec<(String, String, String)> = race_map
-        .iter()
-        .map(|(&schedule_id, (grand_prix_name, winner_name, placements))| {
+    // Convert to Vec<(String, String, String, String)>
+    let mut race_list: Vec<(String, String, String, String)> = race_map
+        .values()
+        .map(|(date, grand_prix_name, winner_name, placements)| {
             let placements_str = if placements.is_empty() {
                 "TBD".to_string()
             } else {
@@ -337,6 +355,7 @@ pub fn get_race_list() -> Option<Vec<(String, String, String)>> {
                     .join(", ")
             };
             (
+                date.clone(),
                 grand_prix_name.clone(),
                 winner_name.clone(),
                 placements_str,
@@ -344,14 +363,14 @@ pub fn get_race_list() -> Option<Vec<(String, String, String)>> {
         })
         .collect();
 
-    // sort race list, by haveing tbd at the end
+    // Sort race list, placing races with "TBD" winner at the end
     race_list.sort_by(|a, b| {
-        if a.1 == "TBD" && b.1 != "TBD" {
+        if a.2 == "TBD" && b.2 != "TBD" {
             std::cmp::Ordering::Greater
-        } else if a.1 != "TBD" && b.1 == "TBD" {
+        } else if a.2 != "TBD" && b.2 == "TBD" {
             std::cmp::Ordering::Less
         } else {
-            a.0.cmp(&b.0) // Sort by grand_prix_name if both are not "TBD"
+            a.0.cmp(&b.0) // Sort by date
         }
     });
 
@@ -362,7 +381,8 @@ pub fn get_race_list() -> Option<Vec<(String, String, String)>> {
     Some(race_list)
 }
 
-pub fn get_race_schedule_info() -> Option<Vec<(String, String, String, String, String, String, String)>> {
+pub fn get_race_schedule_info(
+) -> Option<Vec<(String, String, String, String, String, String, String)>> {
     let conn = get_connection().unwrap();
 
     let mut stmt = conn.prepare(
@@ -388,17 +408,19 @@ pub fn get_race_schedule_info() -> Option<Vec<(String, String, String, String, S
         "#,
     ).unwrap();
 
-    let rows = stmt.query_map([], |row| {
-        Ok((
-            row.get::<_, String>(0)?, 
-            row.get::<_, String>(1)?, 
-            row.get::<_, String>(2)?, 
-            row.get::<_, String>(3)?, 
-            row.get::<_, String>(4)?, 
-            row.get::<_, String>(5)?, 
-            row.get::<_, String>(6)?,
-        ))
-    }).unwrap();
+    let rows = stmt
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, String>(3)?,
+                row.get::<_, String>(4)?,
+                row.get::<_, String>(5)?,
+                row.get::<_, String>(6)?,
+            ))
+        })
+        .unwrap();
 
     let mut race_list: Vec<(String, String, String, String, String, String, String)> = Vec::new();
     for row in rows {
