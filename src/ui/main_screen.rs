@@ -10,7 +10,7 @@ use crate::database::teams::get_selected_team;
 use super::AppState;
 use super::Screen::{
     ChooseTeam, DriverListScreen, DriverScreen, Leaderboard, MainGameScreen, RaceScheduleScreen,
-    TeamListScreen, TeamScreen,
+    RaceScreen, TeamListScreen, TeamScreen,
 };
 
 pub fn build_screen() -> impl Widget<AppState> {
@@ -111,6 +111,13 @@ fn temp_buttons() -> impl Widget<AppState> {
             race::start_race(1);
         });
 
+    let race_one_button =
+        Button::new("race_one_button").on_click(|_ctx, _data: &mut AppState, _env| {
+            println!("race_one_button clicked!");
+            _data.current_screen = RaceScreen { race_id: 1 };
+            _ctx.request_update();
+        });
+
     Flex::row()
         .with_child(leaderboared_button)
         .with_spacer(20.0)
@@ -125,5 +132,7 @@ fn temp_buttons() -> impl Widget<AppState> {
         .with_child(race_schedule_screen_button)
         .with_spacer(20.0)
         .with_child(race_start_button)
+        .with_spacer(20.0)
+        .with_child(race_one_button)
         .with_spacer(20.0)
 }
