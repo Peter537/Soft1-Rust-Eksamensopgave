@@ -1,4 +1,4 @@
-use chrono::NaiveDate;
+use chrono::{NaiveDate, Utc};
 use druid::Selector;
 use druid::{widget::ViewSwitcher, Data, Lens};
 use druid::{AppDelegate, Command, DelegateCtx, Env, Handled, Target};
@@ -25,6 +25,7 @@ pub struct AppState {
     pub game_number: String,
     pub selected_team: Option<String>,
     pub current_date: String,
+    pub last_race_update_time: String,
 }
 
 #[derive(Clone, PartialEq, Eq, Data)]
@@ -48,6 +49,7 @@ impl Default for AppState {
             game_number: String::new(),
             selected_team: None,
             current_date: NaiveDate::from_ymd_opt(2025, 1, 1).unwrap().to_string(),
+            last_race_update_time: Utc::now().to_string(),
         }
     }
 }
@@ -85,7 +87,7 @@ impl MyAppDelegate {
 impl druid::AppDelegate<AppState> for MyAppDelegate {
     fn command(
         &mut self,
-        ctx: &mut DelegateCtx,
+        _ctx: &mut DelegateCtx,
         _target: Target,
         cmd: &Command,
         data: &mut AppState,
@@ -93,7 +95,6 @@ impl druid::AppDelegate<AppState> for MyAppDelegate {
     ) -> Handled {
         if let Some(new_date) = cmd.get(SET_CURRENT_DATE) {
             data.current_date = new_date.clone();
-            // ctx.request_update();
             Handled::Yes
         } else {
             Handled::No
