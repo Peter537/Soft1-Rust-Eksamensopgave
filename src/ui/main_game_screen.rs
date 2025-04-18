@@ -1,11 +1,11 @@
 use chrono::NaiveDate;
 use druid::widget::{Button, Controller, CrossAxisAlignment, Flex, Label, MainAxisAlignment};
-use druid::{Command, Data, Env, LifeCycle, LifeCycleCtx, Target, Widget, WidgetExt};
+use druid::{Command, Env, LifeCycle, LifeCycleCtx, Target, Widget, WidgetExt};
 
-use super::Screen::{MainGameScreen, RaceScreen};
+use super::Screen::{RaceScreen};
 use crate::database::config::{get_current_date, update_current_date};
 use crate::database::driver::get_top_driver_standings;
-use crate::database::race::get_next_race;
+use crate::database::race::{get_next_race, get_race_list};
 use crate::database::teams::{get_own_team_standing, get_top_teams_standings};
 use crate::ui::component::goto::{goto_driver, goto_team};
 use crate::ui::component::table::make_table;
@@ -63,20 +63,27 @@ pub fn build_screen() -> impl Widget<AppState> {
             }
         });
 
+
+    let race_list = get_race_list().unwrap();
+
     let cols = vec!["Race".to_string(), "Winner".to_string(), "MyTeam Position".to_string()];
-    let data = vec![vec!["x".to_string(), "x".to_string(), "x".to_string()]];
+    let data = race_list.iter().map(|race| {
+        let (grand_prix_name, winner_name, my_team_position) = race;
+        
+        vec![grand_prix_name.clone(), winner_name.clone(), my_team_position.clone()]
+    }).collect::<Vec<Vec<String>>>();
 
     let race_list = make_table(cols, data, vec![]);
 
     let mut column1 = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
-    column1.add_child(Label::new("Race List"));
+    column1.add_child(Label::new("Race List").with_text_size(20.0));
     column1.add_spacer(5.0);
     column1.add_child(race_list);
     column1.add_spacer(10.0);
 
     // Column 2 - Top 3 drivers and teams standings
     let mut column2 = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
-    column2.add_child(Label::new("Top 3 drivers standings"));
+    column2.add_child(Label::new("Top 3 drivers standings").with_text_size(20.0));
     column2.add_spacer(5.0);
 
     let top_three_drivers = get_top_driver_standings(Some(3)).unwrap_or(vec![]);
@@ -129,7 +136,7 @@ pub fn build_screen() -> impl Widget<AppState> {
 
     let top_three_teams = make_table(cols, data, vec![(1, goto_team())]);
 
-    column2.add_child(Label::new("Top 3 team standings"));
+    column2.add_child(Label::new("Top 3 team standings").with_text_size(20.0));
     column2.add_spacer(5.0);
     column2.add_child(top_three_teams);
     //////////////////////////////
@@ -163,17 +170,13 @@ pub fn build_screen() -> impl Widget<AppState> {
     column4.add_child(new_action_button);
 
     let layout = Flex::row()
-        .main_axis_alignment(MainAxisAlignment::Center)
+        .main_axis_alignment(MainAxisAlignment::SpaceAround)
         .cross_axis_alignment(CrossAxisAlignment::Start)
         .must_fill_main_axis(true)
         .with_flex_child(column1, 1.0)
-        .with_spacer(40.0)
         .with_flex_child(column2, 1.0)
-        .with_spacer(40.0)
         .with_flex_child(column3, 1.0)
-        .with_spacer(40.0)
-        .with_flex_child(column4, 1.0)
-        .with_spacer(40.0);
+        .with_flex_child(column4, 1.0);
 
     Flex::column()
         .cross_axis_alignment(CrossAxisAlignment::Center)
