@@ -446,3 +446,13 @@ pub fn get_race_schedule_info(
 
     Some(race_list)
 }
+
+pub fn is_next_race(race_id: i32) -> bool {
+    let conn = get_connection().unwrap();
+    let mut stmt = conn
+        .prepare("SELECT MIN(id) FROM season_schedules WHERE status = 'Upcoming'")
+        .unwrap();
+    let min_upcoming_id: Option<i32> = stmt.query_row([], |row| row.get(0)).unwrap();
+
+    min_upcoming_id == Some(race_id)
+}
