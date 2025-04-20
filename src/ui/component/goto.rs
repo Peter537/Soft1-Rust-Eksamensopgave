@@ -5,7 +5,7 @@ use crate::ui::Screen::{DriverScreen, RaceScreen, TeamScreen};
 
 use crate::database::driver::get_driver_id_by_fullname;
 use crate::database::race::get_race_id_by_grandprix_name;
-use crate::database::teams::get_team_id_by_short_name;
+use crate::database::teams::{get_team_id_by_full_name, get_team_id_by_short_name};
 
 pub fn goto_driver() -> Box<dyn Fn(&str) -> Box<dyn Fn(&mut EventCtx, &mut AppState)>> {
     Box::new(|driver: &str| {
@@ -30,6 +30,21 @@ pub fn goto_team() -> Box<dyn Fn(&str) -> Box<dyn Fn(&mut EventCtx, &mut AppStat
             println!("Clicked team: {}", team);
 
             let team_id = get_team_id_by_short_name(&team).unwrap_or(-1);
+
+            _data.current_screen = TeamScreen { team_id };
+
+            _ctx.request_update();
+        })
+    })
+}
+
+pub fn goto_team_fullname() -> Box<dyn Fn(&str) -> Box<dyn Fn(&mut EventCtx, &mut AppState)>> {
+    Box::new(|team: &str| {
+        let team = team.to_string();
+        Box::new(move |_ctx: &mut EventCtx, _data: &mut AppState| {
+            println!("Clicked team: {}", team);
+
+            let team_id = get_team_id_by_full_name(&team).unwrap_or(-1);
 
             _data.current_screen = TeamScreen { team_id };
 
