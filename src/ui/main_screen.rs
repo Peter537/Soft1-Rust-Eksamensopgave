@@ -10,11 +10,10 @@ use crate::database::teams::get_selected_team;
 use super::AppState;
 use super::Screen::{
     ChooseTeam, DriverListScreen, DriverScreen, Leaderboard, MainGameScreen, RaceScheduleScreen,
-    TeamListScreen, TeamScreen,
+    RaceScreen, TeamListScreen, TeamScreen,
 };
 
 pub fn build_screen() -> impl Widget<AppState> {
-
     let existing_careers = appdata::get_existing_careers();
 
     let mut existing_careers_str = String::new();
@@ -30,7 +29,7 @@ pub fn build_screen() -> impl Widget<AppState> {
     let create_new_career_button =
         Button::new("Create New Career").on_click(|_ctx, _data: &mut AppState, _env| {
             appdata::create_new_career(); // Call the function to create a new career
-            
+
             _data.current_screen = ChooseTeam;
             _ctx.request_update();
             println!("New career created!");
@@ -40,7 +39,7 @@ pub fn build_screen() -> impl Widget<AppState> {
         Button::new("Load Saved Game").on_click(|_ctx, _data: &mut AppState, _env| {
             // Logic to load a saved game
             set_game_number(1); // Set the game number to 1 for testing purposes
-            // appdata::load_saved_game(); // Call the function to load a saved game
+                                // appdata::load_saved_game(); // Call the function to load a saved game
             _data.selected_team = get_selected_team(); // Get the selected team from the database
 
             _data.current_screen = MainGameScreen;
@@ -71,7 +70,7 @@ fn temp_buttons() -> impl Widget<AppState> {
         Button::new("team_screen").on_click(|_ctx, _data: &mut AppState, _env| {
             println!("team_screen_button clicked!");
             _data.current_screen = TeamScreen {
-                team_name: "Ferrari".to_string(), // Example team name
+                team_id: 1, // Replace with the actual team ID or name
             };
             _ctx.request_update();
         });
@@ -86,7 +85,9 @@ fn temp_buttons() -> impl Widget<AppState> {
     let driver_screen_button =
         Button::new("driver_screen").on_click(|_ctx, _data: &mut AppState, _env| {
             println!("driver_screen_button clicked!");
-            _data.current_screen = DriverScreen { driver_name: "Max".to_string()};
+            _data.current_screen = DriverScreen {
+                driver_id: 1, // Replace with the actual team ID or name
+            };
             _ctx.request_update();
         });
 
@@ -110,6 +111,13 @@ fn temp_buttons() -> impl Widget<AppState> {
             race::start_race(1);
         });
 
+    let race_one_button =
+        Button::new("race_one_button").on_click(|_ctx, _data: &mut AppState, _env| {
+            println!("race_one_button clicked!");
+            _data.current_screen = RaceScreen { race_id: 1 };
+            _ctx.request_update();
+        });
+
     Flex::row()
         .with_child(leaderboared_button)
         .with_spacer(20.0)
@@ -124,5 +132,7 @@ fn temp_buttons() -> impl Widget<AppState> {
         .with_child(race_schedule_screen_button)
         .with_spacer(20.0)
         .with_child(race_start_button)
+        .with_spacer(20.0)
+        .with_child(race_one_button)
         .with_spacer(20.0)
 }

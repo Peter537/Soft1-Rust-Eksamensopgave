@@ -1,17 +1,36 @@
 use chrono::NaiveDate;
-use druid::widget::{Button, CrossAxisAlignment, Flex, Label, MainAxisAlignment};
-use druid::{Widget, WidgetExt};
+use druid::widget::{Button, Controller, CrossAxisAlignment, Flex, Label, MainAxisAlignment};
+use druid::{Command, Env, LifeCycle, LifeCycleCtx, Target, Widget, WidgetExt};
 
-use crate::ui::component::table::make_table;
-
+use super::component::goto::goto_race;
+use super::Screen::RaceScreen;
 use crate::database::config::{get_current_date, update_current_date};
 use crate::database::driver::get_top_driver_standings;
-use crate::database::race::get_next_race;
+use crate::database::race::{get_next_race, get_race_list};
 use crate::database::teams::{get_own_team_standing, get_top_teams_standings};
 use crate::ui::component::goto::{goto_driver, goto_team};
+use crate::ui::component::table::make_table;
+use crate::ui::{AppState, SET_CURRENT_DATE};
 
-use super::AppState;
-use super::Screen::{MainGameScreen, RaceScreen};
+// Controller to set the current date when the widget is added
+struct InitDateController;
+
+impl<W: Widget<AppState>> Controller<AppState, W> for InitDateController {
+    fn lifecycle(
+        &mut self,
+        child: &mut W,
+        ctx: &mut LifeCycleCtx,
+        event: &LifeCycle,
+        _data: &AppState,
+        _env: &Env,
+    ) {
+        if let LifeCycle::WidgetAdded = event {
+            let current_date = get_current_date().unwrap().to_string();
+            ctx.submit_command(Command::new(SET_CURRENT_DATE, current_date, Target::Auto));
+        }
+        child.lifecycle(ctx, event, _data, _env);
+    }
+}
 
 pub fn build_screen() -> impl Widget<AppState> {
     let current_date = get_current_date().unwrap();
@@ -27,34 +46,57 @@ pub fn build_screen() -> impl Widget<AppState> {
     let new_action_button =
         Button::new("New Action").on_click(move |_ctx, _data: &mut AppState, _env| {
             // Logic for new action
-            if &current_date_clone == &next_race_day_clone {
+            let next_race = get_next_race().unwrap();
+            let next_race_day = NaiveDate::parse_from_str(&next_race.date, "%Y-%m-%d")
+                .ok()
+                .unwrap();
+            if get_current_date().unwrap() == next_race_day {
                 _data.current_screen = RaceScreen {
                     race_id: next_race_id,
                 };
                 _ctx.request_update();
                 println!("New action triggered!");
             } else {
-                update_current_date(&next_race_day_clone);
-                //_data.current_screen = MainGameScreen; // TODO: Find out how to update the screen
+                update_current_date(&next_race_day);
+                _data.current_date = next_race_day.to_string();
                 _ctx.request_update();
                 println!("New action triggered!");
             }
         });
 
-    let cols = vec!["1".to_string(), "2".to_string()];
-    let data = vec![vec!["x".to_string(), "x".to_string()]];
+    let race_list = get_race_list().unwrap();
 
-    let race_list = make_table(cols, data, vec![]);
+    let cols = vec![
+        "Date".to_string(),
+        "Race".to_string(),
+        "Winner".to_string(),
+        "MyTeam Position".to_string(),
+    ];
+    let data = race_list
+        .iter()
+        .map(|race| {
+            let (date, grand_prix_name, winner_name, my_team_position) = race;
+
+            vec![
+                date.clone(),
+                grand_prix_name.clone(),
+                winner_name.clone(),
+                my_team_position.clone(),
+            ]
+        })
+        .collect::<Vec<Vec<String>>>();
+
+    let race_list = make_table(cols, data, vec![(1, goto_race()), (2, goto_driver())]);
 
     let mut column1 = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
-    column1.add_child(Label::new("Race List"));
+    column1.add_child(Label::new("Race List").with_text_size(20.0));
     column1.add_spacer(5.0);
     column1.add_child(race_list);
     column1.add_spacer(10.0);
 
     // Column 2 - Top 3 drivers and teams standings
     let mut column2 = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
-    column2.add_child(Label::new("Top 3 drivers standings"));
+    column2.add_child(Label::new("Top 3 drivers standings").with_text_size(20.0));
     column2.add_spacer(5.0);
 
     let top_three_drivers = get_top_driver_standings(Some(3)).unwrap_or(vec![]);
@@ -107,7 +149,7 @@ pub fn build_screen() -> impl Widget<AppState> {
 
     let top_three_teams = make_table(cols, data, vec![(1, goto_team())]);
 
-    column2.add_child(Label::new("Top 3 team standings"));
+    column2.add_child(Label::new("Top 3 team standings").with_text_size(20.0));
     column2.add_spacer(5.0);
     column2.add_child(top_three_teams);
     //////////////////////////////
@@ -132,26 +174,22 @@ pub fn build_screen() -> impl Widget<AppState> {
     column3.add_flex_child(col3_container, 1.0);
 
     let mut column4 = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
-    column4.add_child(Label::new(
-        "Current Date: ".to_owned() + &current_date.to_string(),
-    ));
+    column4.add_child(Label::new(|data: &AppState, _env: &_| {
+        format!("Current Date: {}", data.current_date)
+    }));
     column4.add_child(Label::new(
         "Next Race Date: ".to_owned() + &next_race_day.to_string(),
     ));
     column4.add_child(new_action_button);
 
     let layout = Flex::row()
-        .main_axis_alignment(MainAxisAlignment::Center)
+        .main_axis_alignment(MainAxisAlignment::SpaceAround)
         .cross_axis_alignment(CrossAxisAlignment::Start)
         .must_fill_main_axis(true)
         .with_flex_child(column1, 1.0)
-        .with_spacer(40.0)
         .with_flex_child(column2, 1.0)
-        .with_spacer(40.0)
         .with_flex_child(column3, 1.0)
-        .with_spacer(40.0)
-        .with_flex_child(column4, 1.0)
-        .with_spacer(40.0);
+        .with_flex_child(column4, 1.0);
 
     Flex::column()
         .cross_axis_alignment(CrossAxisAlignment::Center)
@@ -159,4 +197,5 @@ pub fn build_screen() -> impl Widget<AppState> {
         .with_child(Label::new("Main Game Screen"))
         .with_spacer(20.0)
         .with_child(layout)
+        .controller(InitDateController)
 }

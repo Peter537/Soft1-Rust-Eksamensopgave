@@ -13,7 +13,7 @@ pub fn generate_lap_time(driver_rating: u32, circuit_length: f64) -> f64 {
     // Step 2: Adjust based on driver rating
     // Higher rating -> lower lap time (faster)
     let driver_factor =
-        1.0 - ((driver_rating - RATING_MIN) as f64 / (RATING_MAX - RATING_MIN) as f64) * 0.1;
+        1.0 - ((driver_rating - RATING_MIN) as f64 / (RATING_MAX - RATING_MIN) as f64) * 0.02;
     let adjusted_lap_time = base_lap_time * driver_factor;
 
     // Step 3: Add randomness (±5% variation)
