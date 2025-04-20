@@ -6,8 +6,9 @@ use super::AppState;
 use super::Screen::{Main, RaceScreen};
 use crate::backend::race::start_race;
 use crate::database::circuit::get_circuit_by_id;
-use crate::database::race::{get_race_results, get_season_schedule_by_id};
+use crate::database::race::{get_race_results, get_season_schedule_by_id, is_next_race};
 use crate::model::circuit::Circuit;
+use crate::model::season_schedule;
 use crate::ui::ViewSwitcher;
 use crate::util::image_loader::get_circuit;
 use chrono::Utc;
@@ -32,7 +33,7 @@ pub fn build_screen(race_id: i32) -> impl Widget<AppState> {
                     "DriverName".into(),
                     "Team".into(),
                     "Points".into(),
-                    "Total Time (ms)".into(),
+                    "Total Time".into(),
                 ];
                 let rows: Vec<Vec<String>> = results
                     .into_iter()
@@ -43,7 +44,7 @@ pub fn build_screen(race_id: i32) -> impl Widget<AppState> {
                             r.driver_name,
                             r.team,
                             r.points.to_string(),
-                            r.total_time_ms.to_string(),
+                            format_time(r.total_time_ms as i32),
                         ]
                     })
                     .collect();
@@ -54,7 +55,7 @@ pub fn build_screen(race_id: i32) -> impl Widget<AppState> {
                         .with_spacer(10.0)
                         .with_child(table),
                 )
-            } else {
+            } else if is_next_race(race_id) {
                 // ——— Re‑create the “Start Race” button fresh ———
                 let btn =
                     Button::new("Start Race").on_click(move |ctx, data: &mut AppState, _env| {
@@ -68,6 +69,8 @@ pub fn build_screen(race_id: i32) -> impl Widget<AppState> {
                         println!("Start Race button clicked!");
                     });
                 Box::new(btn)
+            } else {
+                Box::new(Label::new("This isn't the next race."))
             }
         },
     );
@@ -131,5 +134,19 @@ fn circuit_info(id: &i32) -> (impl Widget<AppState>, impl Widget<AppState>) {
     (
         get_circuit(&img).fix_width(400.0).fix_height(400.0),
         circuit_info,
+    )
+}
+
+fn format_time(ms: i32) -> String {
+    // return in format "H:MM:SS.mmm" for hours < 10, "HH:MM:SS.mmm" for hours >= 10
+    let seconds = ms / 1000;
+    let milliseconds = ms % 1000;
+    let minutes = seconds / 60;
+    let hours = minutes / 60;
+    let seconds = seconds % 60;
+    let minutes = minutes % 60;
+    format!(
+        "{}:{:02}:{:02}.{:03}",
+        hours, minutes, seconds, milliseconds
     )
 }
