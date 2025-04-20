@@ -1,6 +1,6 @@
+use crate::model::season::{RaceInfo, SeasonInfo};
 use crate::{database::connection::get_connection, model::team::Team};
 use std::collections::HashMap;
-use crate::model::season::{RaceInfo, SeasonInfo};
 
 pub fn get_all_teams() -> Vec<(String, String, Vec<(String, String)>)> {
     let conn = get_connection().unwrap();
@@ -237,12 +237,26 @@ pub fn get_team_id_by_short_name(short_name: &str) -> Option<i32> {
         .prepare("SELECT id FROM teams WHERE short_name = ?")
         .unwrap();
 
-    let team_id: i32 = stmt
-        .query_row([short_name], |row| row.get(0))
-        .unwrap_or(-1);
+    let team_id: i32 = stmt.query_row([short_name], |row| row.get(0)).unwrap_or(-1);
 
     if team_id == -1 {
         println!("Team with short name: '{}' not found", short_name);
+        None
+    } else {
+        Some(team_id)
+    }
+}
+
+pub fn get_team_id_by_full_name(full_name: &str) -> Option<i32> {
+    let conn = get_connection().unwrap();
+    let mut stmt = conn
+        .prepare("SELECT id FROM teams WHERE full_name = ?")
+        .unwrap();
+
+    let team_id: i32 = stmt.query_row([full_name], |row| row.get(0)).unwrap_or(-1);
+
+    if team_id == -1 {
+        println!("Team with full name: '{}' not found", full_name);
         None
     } else {
         Some(team_id)
