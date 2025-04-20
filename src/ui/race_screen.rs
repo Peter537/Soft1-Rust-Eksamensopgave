@@ -1,6 +1,7 @@
 use druid::widget::{Button, Container, CrossAxisAlignment, Flex, Label, MainAxisAlignment};
 use druid::{Color, Env, Widget, WidgetExt};
 
+use super::component::goto::{goto_driver, goto_team_fullname};
 use super::component::table::make_table;
 use super::AppState;
 use super::Screen::{Main, RaceScreen};
@@ -48,7 +49,11 @@ pub fn build_screen(race_id: i32) -> impl Widget<AppState> {
                         ]
                     })
                     .collect();
-                let table = make_table(cols.clone(), rows, vec![]);
+                let table = make_table(
+                    cols.clone(),
+                    rows,
+                    vec![(2, goto_driver()), (3, goto_team_fullname())],
+                );
                 Box::new(
                     Flex::column()
                         .with_child(Label::new("Race Results"))
