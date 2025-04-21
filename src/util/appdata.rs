@@ -54,7 +54,7 @@ pub fn create_files_if_not_exist() {
     fs::create_dir_all(&config_path).expect("Failed to create Config directory");
 }
 
-pub fn get_existing_careers() -> HashSet<u32> {
+pub fn get_existing_careers() -> Vec<u32> {
     // Get the AppData/Roaming path
     let appdata = env::var("APPDATA").expect("APPDATA environment variable not found");
     let base_path = PathBuf::from(appdata).join("FormulaOneManager");
@@ -78,7 +78,9 @@ pub fn get_existing_careers() -> HashSet<u32> {
             }
         }
     }
-    existing
+    let mut sorted = existing.into_iter().collect::<Vec<u32>>();
+    sorted.sort();
+    sorted
 }
 
 pub fn create_new_career() {
