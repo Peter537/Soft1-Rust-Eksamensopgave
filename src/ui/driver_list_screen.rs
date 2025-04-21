@@ -33,9 +33,7 @@ pub fn build_screen() -> impl Widget<AppState> {
             }),
         )
         .with_spacer(20.0)
-        .with_child(
-            SizedBox::new(Scroll::new(driver_table).vertical()).height(500.0), // set to desired scrollable height
-        )
+        .with_child(driver_table)
 }
 
 // Should be moved to the database module?

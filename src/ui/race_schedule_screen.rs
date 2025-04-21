@@ -3,11 +3,10 @@ use druid::Widget;
 
 use super::AppState;
 use super::Screen::Main;
-use crate::ui::component::table::make_table;
 use crate::database::race::get_race_schedule_info;
+use crate::ui::component::table::make_table;
 
 pub fn build_screen() -> impl Widget<AppState> {
-
     let col = vec![
         "Date".to_string(),
         "Country".to_string(),
@@ -21,19 +20,24 @@ pub fn build_screen() -> impl Widget<AppState> {
     let race_schedule_data = get_race_schedule_info().unwrap();
 
     let data = if !race_schedule_data.is_empty() {
-        race_schedule_data.iter().map(|race| {
-            vec![
-                race.0.clone(),
-                race.1.clone(),
-                race.2.clone(),
-                race.3.clone(),
-                race.4.clone(),
-                race.5.clone(),
-                race.6.clone(),
-            ]
-        }).collect()
+        race_schedule_data
+            .iter()
+            .map(|race| {
+                vec![
+                    race.0.clone(),
+                    race.1.clone(),
+                    race.2.clone(),
+                    race.3.clone(),
+                    race.4.clone(),
+                    race.5.clone(),
+                    race.6.clone(),
+                ]
+            })
+            .collect()
     } else {
-        col.iter().map(|_| vec!["".to_string(); col.len()]).collect()
+        col.iter()
+            .map(|_| vec!["".to_string(); col.len()])
+            .collect()
     };
 
     let table = make_table(col, data, vec![]);
@@ -48,5 +52,5 @@ pub fn build_screen() -> impl Widget<AppState> {
             }),
         )
         .with_spacer(20.0)
-        .with_child(SizedBox::new(Scroll::new(table).vertical()).height(700.0))
+        .with_child(table)
 }

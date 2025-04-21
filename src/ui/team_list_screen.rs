@@ -21,7 +21,11 @@ pub fn build_screen() -> impl Widget<AppState> {
         "Country".to_string(),
     ];
 
-    let driver_table = make_table(col, all_teams, vec![(0, goto_team()), (3, goto_driver()), (4, goto_driver())]);
+    let driver_table = make_table(
+        col,
+        all_teams,
+        vec![(0, goto_team()), (3, goto_driver()), (4, goto_driver())],
+    );
 
     Flex::column()
         .with_spacer(20.0)
@@ -33,7 +37,7 @@ pub fn build_screen() -> impl Widget<AppState> {
             }),
         )
         .with_spacer(20.0)
-        .with_child(SizedBox::new(Scroll::new(driver_table).vertical()).height(400.0))
+        .with_child(driver_table)
 }
 
 // should this be moved to the database module?
@@ -85,7 +89,7 @@ pub fn get_team_data() -> Vec<Vec<String>> {
                 .as_ref()
                 .and_then(|d| d.split(',').nth(1))
                 .unwrap_or("");
-            
+
             Ok(vec![
                 short_name,
                 team_name,
