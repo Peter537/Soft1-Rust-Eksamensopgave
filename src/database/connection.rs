@@ -61,4 +61,7 @@ pub fn get_connection() -> Result<ConnectionGuard, String> {
 pub fn set_game_number(number: i32) {
     // Set the game number in the static variable
     GAME_NUMBER.store(number, Ordering::SeqCst);
+    // set the connection to None to force a new connection on next call
+    let mut conn_guard = CONNECTION.lock().unwrap();
+    *conn_guard = None; // Reset the connection to force a new one on next call
 }
