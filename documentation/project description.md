@@ -49,7 +49,7 @@
 
 ---
 
-## Exam Questions & Where to add
+## Exam Questions
 
 ### 1 Error Handling and Enums
 
