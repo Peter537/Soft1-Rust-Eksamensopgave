@@ -3,14 +3,24 @@ use std::collections::HashMap;
 use crate::model::season::{RaceInfo, SeasonInfo};
 
 pub fn get_all_teams() -> Vec<(String, String, Vec<(String, String)>)> {
-    let conn = get_connection().unwrap();
-    let mut stmt = conn
-        .prepare(
-            "SELECT t.full_name, t.short_name, d.first_name, d.last_name 
-            FROM teams t JOIN driver_contracts dc ON t.id = dc.fk_team_id
-            JOIN drivers d ON dc.fk_driver_id = d.id ORDER BY t.short_name, d.last_name",
-        )
-        .unwrap();
+    let conn = match get_connection() {
+        Ok(conn) => conn,
+        Err(e) => {
+            eprintln!("Failed to connect to the database: {}", e);
+            return vec![]; // Return an empty vector on error
+        }
+    };
+    let mut stmt = match conn.prepare(
+        "SELECT t.full_name, t.short_name, d.first_name, d.last_name 
+        FROM teams t JOIN driver_contracts dc ON t.id = dc.fk_team_id
+        JOIN drivers d ON dc.fk_driver_id = d.id ORDER BY t.short_name, d.last_name",
+    ) {
+        Ok(stmt) => stmt,
+        Err(e) => {
+            eprintln!("Failed to prepare the statement: {}", e);
+            return vec![]; // Return an empty vector on error
+        }
+    };
 
     let rows = stmt
         .query_map([], |row| {
@@ -68,25 +78,28 @@ pub fn save_selected_team(team_short_name: &str) {
     stmt.execute([team_id]).unwrap();
 }
 
-pub fn get_selected_team() -> Option<String> {
+pub fn get_selected_team(game_number: &str) -> Option<String> {
     // Open a connection to the SQLite database
     let conn = get_connection().unwrap();
 
-    // Query the selected team from the database
-    let mut stmt = conn.prepare("SELECT t.short_name FROM teams t JOIN game_config c ON t.id = c.selected_team WHERE c.id = 1").unwrap();
+    // Use the dynamic game number in the query
+    let mut stmt = conn
+        .prepare("SELECT t.short_name FROM teams t JOIN game_config c ON t.id = c.selected_team WHERE c.id = ?1")
+        .unwrap();
 
     let selected_team = stmt
-        .query_row([], |row| Ok(row.get::<_, String>(0).unwrap()))
+        .query_row([game_number], |row| row.get(0))
         .ok();
 
     if let Some(ref team) = selected_team {
-        println!("Selected team: {}", team);
+        println!("Selected team for game {}: {}", game_number, team);
     } else {
-        println!("No team selected or not found in the database.");
+        println!("No team selected or not found for game {}.", game_number);
     }
 
     selected_team
 }
+
 
 pub fn get_own_team_standing() -> Option<(String, Vec<String>, i32)> {
     // Open a connection to the SQLite database

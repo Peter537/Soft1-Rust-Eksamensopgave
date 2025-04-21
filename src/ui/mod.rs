@@ -11,6 +11,7 @@ use crate::ui::component::navbar::build_navbar;
 use crate::ui::component::{modal::build_modal, toast::build_toast};
 
 pub const SET_CURRENT_DATE: Selector<String> = Selector::new("app.set-current-date");
+pub const RESET_GAME_STATE: Selector = Selector::new("app.reset-game-state");
 
 
 
@@ -78,8 +79,9 @@ impl Default for AppState {
 
 pub fn build_ui() -> impl druid::Widget<AppState> {
     ViewSwitcher::new(
-        |data: &AppState, _env| data.current_screen.clone(),
-        |screen, _data, _env| -> Box<dyn druid::Widget<AppState>> {
+        // 👇 Track BOTH current_screen AND game_number
+        |data: &AppState, _env| (data.current_screen.clone(), data.game_number.clone()),
+        |(screen, _game_number), _data, _env| -> Box<dyn druid::Widget<AppState>> {
             fn with_navbar(inner: impl Widget<AppState> + 'static) -> impl Widget<AppState> {
                 Flex::column()
                     .with_child(build_navbar())
@@ -97,19 +99,11 @@ pub fn build_ui() -> impl druid::Widget<AppState> {
                 .padding(10.0)
                 .center();
 
-            let modal_button = Button::new("Show Modal")
-                .on_click(|_ctx, data: &mut AppState, _env| {
-                    data.show_modal = !data.show_modal;
-                })
-                .padding(10.0)
-                .center();
-
             match screen {
                 Screen::Main => {
                     let main_content = Flex::column()
                         .with_child(main_screen::build_screen())
                         .with_spacer(20.0)
-                        .with_child(modal_button)
                         .with_child(toast_button)
                         .with_child(build_toast());
 
@@ -122,7 +116,7 @@ pub fn build_ui() -> impl druid::Widget<AppState> {
                 }
                 Screen::ChooseTeam => {
                     let choose_team_content = choose_team_screen::build_screen();
-                    Box::new(choose_team_content) // No navbar for the ChooseTeam screen
+                    Box::new(choose_team_content)
                 }
                 Screen::MainGameScreen => Box::new(with_navbar(main_game_screen::build_screen())),
                 Screen::RaceScreen { race_id } => {
@@ -137,7 +131,6 @@ pub fn build_ui() -> impl druid::Widget<AppState> {
                 Screen::RaceScheduleScreen => {
                     Box::new(with_navbar(race_schedule_screen::build_screen()))
                 }
-
             }
         },
     )
@@ -162,6 +155,16 @@ impl druid::AppDelegate<AppState> for MyAppDelegate {
     ) -> Handled {
         if let Some(new_date) = cmd.get(SET_CURRENT_DATE) {
             data.current_date = new_date.clone();
+            Handled::Yes
+        } else if cmd.is(RESET_GAME_STATE) {
+            println!("🔁 Resetting game state...");
+
+            // Clear and reset game-related state
+            data.selected_team = None;
+            data.game_number = "temp-trigger".to_string(); // Force ViewSwitcher to rerender
+            data.current_screen = Screen::Main;
+            data.game_number.clear(); // Final clear
+
             Handled::Yes
         } else {
             Handled::No

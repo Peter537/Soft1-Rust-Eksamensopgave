@@ -1,7 +1,7 @@
 use druid::widget::{Button, Flex };
 use druid::{Color, Widget, WidgetExt};
 
-use crate::ui::{main_game_screen, AppState};
+use crate::ui::{main_game_screen, AppState, RESET_GAME_STATE};
 use crate::ui::Screen::{
     DriverListScreen, Leaderboard, Main, RaceScheduleScreen, TeamListScreen, MainGameScreen,
 };
@@ -33,8 +33,8 @@ pub fn build_navbar() -> impl Widget<AppState> {
         ctx.request_update();
     });
 
-    let exit_button = Button::new("Exit Game").on_click(|ctx, data: &mut AppState, _env| {
-        data.current_screen = Main; // Return to the main screen
+    let exit_button = Button::new("Exit Game").on_click(|ctx, _data: &mut AppState, _env| {
+        ctx.submit_command(RESET_GAME_STATE);
         ctx.request_update();
     });
 

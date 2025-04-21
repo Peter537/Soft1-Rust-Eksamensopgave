@@ -35,16 +35,10 @@ pub fn build_screen() -> impl Widget<AppState> {
             println!("New career created!");
         });
 
-    let create_load_saved_game_button =
-        Button::new("Load Saved Game").on_click(|_ctx, _data: &mut AppState, _env| {
-            // Logic to load a saved game
-            set_game_number(1); // Set the game number to 1 for testing purposes
-                                // appdata::load_saved_game(); // Call the function to load a saved game
-            _data.selected_team = get_selected_team(); // Get the selected team from the database
-
-            _data.current_screen = MainGameScreen;
+        let create_load_saved_game_button =
+        Button::new("Load Saved Game").on_click(|_ctx, data: &mut AppState, _env| {
+            data.show_modal = true;
             _ctx.request_update();
-            println!("Saved Game loaded!");
         });
 
     // Vertical layout for the widgets

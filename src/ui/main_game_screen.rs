@@ -33,38 +33,63 @@ impl<W: Widget<AppState>> Controller<AppState, W> for InitDateController {
 }
 
 pub fn build_screen() -> impl Widget<AppState> {
-    let current_date = get_current_date().unwrap();
-    let next_race = get_next_race().unwrap();
-    let next_race_day = NaiveDate::parse_from_str(&next_race.date, "%Y-%m-%d")
-        .ok()
-        .unwrap();
+    let current_date = match get_current_date() {
+        Some(date) => date,
+        None => {
+            eprintln!("Error: Failed to get current date.");
+            return Label::new("Error: Failed to load current date.").boxed();
+        }
+    };
+
+    // Safely handle `get_next_race`
+    let next_race = match get_next_race() {
+        Some(race) => race,
+        None => {
+            eprintln!("Error: Failed to get next race.");
+            return Label::new("Error: Failed to load next race.").boxed();
+        }
+    };
+
+    // Safely parse the next race date
+    let next_race_day = match NaiveDate::parse_from_str(&next_race.date, "%Y-%m-%d") {
+        Ok(date) => date,
+        Err(err) => {
+            eprintln!("Error: Failed to parse next race date: {}", err);
+            return Label::new("Error: Failed to parse next race date.").boxed();
+        }
+    };
 
     let current_date_clone = current_date.clone();
     let next_race_day_clone = next_race_day.clone();
     let next_race_id = next_race.id.clone();
 
     let new_action_button =
-        Button::new("New Action").on_click(move |_ctx, _data: &mut AppState, _env| {
-            // Logic for new action
-            let next_race = get_next_race().unwrap();
-            let next_race_day = NaiveDate::parse_from_str(&next_race.date, "%Y-%m-%d")
-                .ok()
-                .unwrap();
-            if get_current_date().unwrap() == next_race_day {
-                _data.current_screen = RaceScreen {
-                    race_id: next_race_id,
-                };
-                _ctx.request_update();
-                println!("New action triggered!");
-            } else {
-                update_current_date(&next_race_day);
-                _data.current_date = next_race_day.to_string();
-                _ctx.request_update();
-                println!("New action triggered!");
-            }
-        });
+    Button::new("New Action").on_click(move |_ctx, _data: &mut AppState, _env| {
+        let next_race = get_next_race().unwrap();
+        let next_race_day = NaiveDate::parse_from_str(&next_race.date, "%Y-%m-%d").unwrap();
+    
+        if get_current_date().unwrap() == next_race_day {
+            _data.current_screen = RaceScreen {
+                race_id: next_race.id.clone(),
+            };
+            _ctx.request_update();
+            println!("Racing now...");
+        } else {
+            update_current_date(&next_race_day);
+            _data.current_date = next_race_day.to_string();
+            _ctx.request_update();
+            println!("Advanced to next race date.");
+        }
+    });
+    
 
-    let race_list = get_race_list().unwrap();
+    let race_list = match get_race_list() {
+        Some(list) => list,
+        None => {
+            eprintln!("Error: Failed to get race list.");
+            return Label::new("Error: Failed to load race list.").boxed();
+        }
+    };
 
     let cols = vec![
         "Date".to_string(),
@@ -107,10 +132,7 @@ pub fn build_screen() -> impl Widget<AppState> {
     ];
 
     // make dommain for the table if empty
-    let mut data: Vec<Vec<String>> = cols
-        .iter()
-        .map(|_| vec!["".to_string(); cols.len()])
-        .collect();
+    let mut data = vec![vec!["-".to_string(); cols.len()]];
 
     if !top_three_drivers.is_empty() {
         data = top_three_drivers
@@ -198,4 +220,5 @@ pub fn build_screen() -> impl Widget<AppState> {
         .with_spacer(20.0)
         .with_child(layout)
         .controller(InitDateController)
+        .boxed()
 }
