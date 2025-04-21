@@ -57,6 +57,8 @@ Ift. Result<>, så kan vi bruge det til når der kan ske fejl, ex. ved `/util/im
 
 Ift. Option<>, så kan vi bruge det i database-metoderne hvis nu der ikke er nogen data i databasen.
 
+Alle steder med `.expect()` skal vi fjerne og fejlhåndtere ordentligt.
+
 ### 2. Ownership and Borrowing Concepts
 
 ### 3. Strings and String Handling in Rust
