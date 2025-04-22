@@ -58,6 +58,7 @@ Ift. Result<>, så kan vi bruge det til når der kan ske fejl, ex. ved `/util/im
 Ift. Option<>, så kan vi bruge det i database-metoderne hvis nu der ikke er nogen data i databasen.
 
 Alle steder med `.expect()` skal vi fjerne og fejlhåndtere ordentligt.
+
 ---
 
 Der er 5 (ish) forskellige muligheder til at vi kan håndtere errors:
