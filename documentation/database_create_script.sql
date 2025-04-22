@@ -10,8 +10,9 @@ DROP TABLE IF EXISTS seasons;
 DROP TABLE IF EXISTS driver_contracts;
 DROP TABLE IF EXISTS drivers;
 DROP TABLE IF EXISTS teams;
+DROP TABLE IF EXISTS team_bases;
 DROP TABLE IF EXISTS circuits;
-DROP TABLE IF EXISTS config;
+DROP TABLE IF EXISTS game_config;
 DROP TABLE IF EXISTS countries;
 
 -- Recreate the tables in a dependency-safe order
@@ -36,19 +37,26 @@ CREATE TABLE drivers (
   FOREIGN KEY (fk_country_id) REFERENCES countries(id)
 );
 
--- Table: teams (depends on countries)
+-- Table: teams
 CREATE TABLE teams (
   id INTEGER PRIMARY KEY,
   short_name TEXT NOT NULL,
   full_name TEXT NOT NULL,
-  fk_country_id INTEGER NOT NULL,
-  base_city TEXT NOT NULL,
   first_entry INTEGER NOT NULL,
   team_chief TEXT NOT NULL,
   chassis TEXT NOT NULL,
   power_unit TEXT NOT NULL,
   image_team TEXT,
-  image_car TEXT,
+  image_car TEXT
+);
+
+-- Table: team_bases (depends on countries and teams)
+CREATE TABLE team_bases (
+  id INTEGER PRIMARY KEY,
+  fk_team_id INTEGER NOT NULL,
+  city TEXT NOT NULL,
+  fk_country_id INTEGER NOT NULL,
+  FOREIGN KEY (fk_team_id) REFERENCES teams(id),
   FOREIGN KEY (fk_country_id) REFERENCES countries(id)
 );
 

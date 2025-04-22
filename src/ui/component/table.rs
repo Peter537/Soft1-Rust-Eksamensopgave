@@ -1,7 +1,6 @@
+use crate::ui::AppState;
 use druid::widget::{Container, Controller, Flex, Label};
 use druid::{Color, Env, Event, EventCtx, Widget, WidgetExt};
-
-use crate::ui::AppState;
 
 // Controller to handle click events on a cell
 struct ButtonController {
@@ -44,19 +43,19 @@ impl<W: Widget<AppState>> Controller<AppState, W> for ButtonController {
 }
 
 pub fn make_table(
-    column: Vec<String>,
+    columns: Vec<String>,
     data: Vec<Vec<String>>,
     clickable_cols: Vec<(
         usize,
         Box<dyn Fn(&str) -> Box<dyn Fn(&mut EventCtx, &mut AppState)>>,
     )>,
 ) -> impl Widget<AppState> {
-    if column.is_empty() {
+    if columns.is_empty() {
         println!("Column is empty!");
         return Flex::column();
     }
 
-    if !validate_data(column.len(), &data) {
+    if !validate_data(columns.len(), &data) {
         println!("Data validation failed: inconsistent row sizes.");
         return Flex::column();
     }
@@ -67,13 +66,13 @@ pub fn make_table(
     } */
 
     // Calculate maximum width for each column (based on character length)
-    let col_widths = calculate_column_widths(&column, &data);
+    let col_widths = calculate_column_widths(&columns, &data);
 
     let mut table = Flex::column();
 
     // Header row with borders
     let mut header_row = Flex::row();
-    for (i, header) in column.iter().enumerate() {
+    for (i, header) in columns.iter().enumerate() {
         header_row.add_child(bordered_cell(Label::new(header.clone()), col_widths[i]));
     }
     table.add_child(header_row);

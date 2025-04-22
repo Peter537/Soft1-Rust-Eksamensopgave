@@ -1,11 +1,8 @@
-use druid::widget::{Button, CrossAxisAlignment, Flex, Label, MainAxisAlignment, Scroll};
-use druid::WidgetExt;
-use druid::{Env, Widget};
-
 use super::AppState;
 use super::Screen::MainGameScreen;
-
 use crate::database::teams::{get_all_teams, save_selected_team};
+use druid::widget::{Button, CrossAxisAlignment, Flex, Label, MainAxisAlignment, Scroll};
+use druid::{Env, Widget, WidgetExt};
 
 pub fn build_screen() -> impl Widget<AppState> {
     let teams = get_all_teams();

@@ -1,18 +1,16 @@
-use druid::widget::{Button, Container, CrossAxisAlignment, Flex, Label, MainAxisAlignment};
-use druid::{Color, Env, Widget, WidgetExt};
-
-use super::component::goto::{goto_driver, goto_team_fullname};
+use super::component::goto::{goto_driver, goto_team};
 use super::component::table::make_table;
 use super::AppState;
-use super::Screen::{Main, RaceScreen};
+use super::Screen::RaceScreen;
 use crate::backend::race::start_race;
 use crate::database::circuit::get_circuit_by_id;
 use crate::database::race::{get_race_results, get_season_schedule_by_id, is_next_race};
 use crate::model::circuit::Circuit;
-use crate::model::season_schedule;
 use crate::ui::ViewSwitcher;
 use crate::util::image_loader::get_circuit;
 use chrono::Utc;
+use druid::widget::{Button, Container, CrossAxisAlignment, Flex, Label, MainAxisAlignment};
+use druid::{Color, Env, Widget, WidgetExt};
 
 pub fn build_screen(race_id: i32) -> impl Widget<AppState> {
     // Fetch circuit info
@@ -52,7 +50,7 @@ pub fn build_screen(race_id: i32) -> impl Widget<AppState> {
                 let table = make_table(
                     cols.clone(),
                     rows,
-                    vec![(2, goto_driver()), (3, goto_team_fullname())],
+                    vec![(2, goto_driver()), (3, goto_team())],
                 );
                 Box::new(
                     Flex::column()
@@ -92,18 +90,9 @@ pub fn build_screen(race_id: i32) -> impl Widget<AppState> {
     column2.add_spacer(20.0);
     column2.add_child(circuit_info);
 
-    // Home button
-    let home_button = Button::new("Home").on_click(|_ctx, _data: &mut AppState, _env| {
-        _data.current_screen = Main;
-        _ctx.request_update();
-        println!("Home button clicked!");
-    });
-
     // Main layout
     Flex::column()
         .cross_axis_alignment(CrossAxisAlignment::Center)
-        .with_child(Label::new("Race Screen"))
-        .with_spacer(20.0)
         .with_flex_child(
             Flex::row()
                 .main_axis_alignment(MainAxisAlignment::Center)
@@ -114,8 +103,6 @@ pub fn build_screen(race_id: i32) -> impl Widget<AppState> {
                 .with_flex_child(column2, 1.0),
             1.0,
         )
-        .with_spacer(20.0)
-        .with_child(home_button)
 }
 
 fn circuit_info(id: &i32) -> (impl Widget<AppState>, impl Widget<AppState>) {

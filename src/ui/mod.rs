@@ -1,32 +1,28 @@
 // Defines the application state and orchestrates UI components by switching between screens.
-use chrono::{NaiveDate, Utc};
-use druid::{
-    widget::{Button, Flex, ViewSwitcher, ZStack},
-    Data, Lens, Selector, TimerToken, UnitPoint, Vec2, Widget, WidgetExt,
+use crate::ui::Screen::{
+    DriverListScreen, Leaderboard, MainGameScreen, RaceScheduleScreen, TeamListScreen,
 };
-use druid::{AppDelegate, Command, DelegateCtx, Env, Handled, Target};
-use std::time::Duration;
-
-use crate::ui::component::navbar::build_navbar;
-use crate::ui::component::{modal::build_modal, toast::build_toast};
+use chrono::{NaiveDate, Utc};
+use druid::widget::{Button, Flex, ViewSwitcher};
+use druid::{
+    Color, Command, Data, DelegateCtx, Env, Handled, Lens, Selector, Target, Widget, WidgetExt,
+};
 
 pub const SET_CURRENT_DATE: Selector<String> = Selector::new("app.set-current-date");
 pub const RESET_GAME_STATE: Selector = Selector::new("app.reset-game-state");
 
-
-
 // Public submodules for screen-specific UI logic
-pub mod choose_team_screen;
-pub mod main_game_screen;
-pub mod main_screen;
-pub mod race_screen;
+mod choose_team_screen;
+mod main_game_screen;
+mod main_screen;
+mod race_screen;
 
-pub mod driver_list_screen;
-pub mod driver_screen;
-pub mod leaderboard_screen;
-pub mod race_schedule_screen;
-pub mod team_list_screen;
-pub mod team_screen;
+mod driver_list_screen;
+mod driver_screen;
+mod leaderboard_screen;
+mod race_schedule_screen;
+mod team_list_screen;
+mod team_screen;
 
 pub mod component;
 
@@ -37,15 +33,8 @@ pub struct AppState {
     pub selected_team: Option<String>,
     pub current_date: String,
     pub last_race_update_time: String,
-    pub toast_message: Option<String>,
-    #[data(ignore)]
-    pub toast_timer: Option<TimerToken>, // Timer for toast message
-
     pub show_modal: bool,
-    pub show_toast: bool,
 }
-
-
 
 #[derive(Clone, PartialEq, Eq, Data)]
 pub enum Screen {
@@ -67,10 +56,7 @@ impl Default for AppState {
             current_screen: Screen::Main,
             game_number: String::new(),
             selected_team: None,
-            toast_message: None,
-            toast_timer: None,
             show_modal: false,
-            show_toast: false,
             current_date: NaiveDate::from_ymd_opt(2025, 1, 1).unwrap().to_string(),
             last_race_update_time: Utc::now().to_string(),
         }
@@ -89,35 +75,26 @@ pub fn build_ui() -> impl druid::Widget<AppState> {
                     .with_flex_child(inner, 1.0)
             }
 
-            let toast_button = Button::new("Show Toast")
-                .on_click(|ctx, data: &mut AppState, _env| {
-                    data.toast_message = Some("This is a toast notification!".into());
-                    data.show_toast = true;
-                    data.toast_timer = Some(ctx.request_timer(Duration::from_secs(3)));
-                    ctx.request_update();
-                })
-                .padding(10.0)
-                .center();
-
             match screen {
                 Screen::Main => {
-                    let main_content = Flex::column()
-                        .with_child(main_screen::build_screen())
-                        .with_spacer(20.0)
-                        .with_child(toast_button)
-                        .with_child(build_toast());
+                    Box::new(main_screen::build_screen())
+                    /*let main_content = Flex::column().with_child(main_screen::build_screen());
 
                     ZStack::new(main_content)
-                        .with_child(build_modal(), Vec2::new(200.0, 200.0), Vec2::new(0.0, 0.0), UnitPoint::CENTER, Vec2::new(0.0, 0.0))
+                        .with_child(
+                            build_modal(),
+                            Vec2::new(200.0, 200.0),
+                            Vec2::new(0.0, 0.0),
+                            UnitPoint::CENTER,
+                            Vec2::new(0.0, 0.0),
+                        )
                         .boxed()
+                        */
                 }
                 Screen::TeamScreen { team_id } => {
                     Box::new(with_navbar(team_screen::build_screen(team_id)))
                 }
-                Screen::ChooseTeam => {
-                    let choose_team_content = choose_team_screen::build_screen();
-                    Box::new(choose_team_content)
-                }
+                Screen::ChooseTeam => Box::new(choose_team_screen::build_screen()),
                 Screen::MainGameScreen => Box::new(with_navbar(main_game_screen::build_screen())),
                 Screen::RaceScreen { race_id } => {
                     Box::new(with_navbar(race_screen::build_screen(*race_id)))
@@ -127,13 +104,68 @@ pub fn build_ui() -> impl druid::Widget<AppState> {
                 Screen::DriverScreen { driver_id } => {
                     Box::new(with_navbar(driver_screen::build_screen(driver_id)))
                 }
-                Screen::DriverListScreen => Box::new(with_navbar(driver_list_screen::build_screen())),
+                Screen::DriverListScreen => {
+                    Box::new(with_navbar(driver_list_screen::build_screen()))
+                }
                 Screen::RaceScheduleScreen => {
                     Box::new(with_navbar(race_schedule_screen::build_screen()))
                 }
             }
         },
     )
+}
+
+pub fn build_navbar() -> impl Widget<AppState> {
+    let home_button = Button::new("🏠").on_click(|ctx, data: &mut AppState, _env| {
+        data.current_screen = MainGameScreen;
+        ctx.request_update();
+    });
+
+    let drivers_button = Button::new("Drivers").on_click(|ctx, data: &mut AppState, _env| {
+        data.current_screen = DriverListScreen;
+        ctx.request_update();
+    });
+
+    let teams_button = Button::new("Teams").on_click(|ctx, data: &mut AppState, _env| {
+        data.current_screen = TeamListScreen;
+        ctx.request_update();
+    });
+
+    let races_button = Button::new("Races").on_click(|ctx, data: &mut AppState, _env| {
+        data.current_screen = RaceScheduleScreen;
+        ctx.request_update();
+    });
+
+    let leaderboard_button =
+        Button::new("Leaderboard").on_click(|ctx, data: &mut AppState, _env| {
+            data.current_screen = Leaderboard;
+            ctx.request_update();
+        });
+
+    let exit_button = Button::new("Exit Game").on_click(|ctx, _data: &mut AppState, _env| {
+        ctx.submit_command(RESET_GAME_STATE);
+        ctx.request_update();
+    });
+
+    // Create left group (home + nav buttons)
+    let left_side = Flex::row()
+        .with_child(home_button)
+        .with_spacer(10.0)
+        .with_child(drivers_button)
+        .with_spacer(10.0)
+        .with_child(teams_button)
+        .with_spacer(10.0)
+        .with_child(races_button)
+        .with_spacer(10.0)
+        .with_child(leaderboard_button);
+
+    // Align the exit button to the far right with a spacer in between
+    Flex::row()
+        .with_flex_child(left_side, 1.0) // Left side takes up all available space
+        .with_flex_spacer(1.0) // Spacer takes up remaining space
+        .with_child(exit_button) // Exit button is placed at the far right
+        .padding(10.0)
+        .background(Color::rgba8(0, 0, 125, 60)) // 80% opacity as 204 in 0-255 range
 }
 
 pub struct MyAppDelegate;

@@ -1,9 +1,8 @@
+use crate::database::set_game_number;
 use std::collections::HashSet;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
-
-use crate::database::connection::set_game_number;
 
 pub fn create_files_if_not_exist() {
     // Get the AppData/Roaming path

@@ -1,15 +1,11 @@
+use super::super::ui::AppState;
+use druid::piet::ImageFormat;
+use druid::widget::{Image, Label};
+use druid::{Color, ImageBuf, Widget, WidgetExt};
+use image::load_from_memory;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
-
-use druid::widget::{Image, Label};
-use druid::{Color, ImageBuf, Widget, WidgetExt};
-
-use druid::piet::ImageFormat;
-
-use image::load_from_memory;
-
-use super::super::ui::AppState;
 
 fn get_image_at(path: PathBuf) -> Box<dyn Widget<AppState>> {
     let appdata = env::var("APPDATA").expect("APPDATA environment variable not found");

@@ -1,7 +1,7 @@
 use crate::database::connection::get_connection;
 use crate::model::driver::Driver;
+use crate::model::season::{RaceInfo, SeasonInfo};
 use std::collections::HashMap;
-use crate::model::season::{SeasonInfo, RaceInfo};
 
 pub fn get_driver_by_id(id: &i32) -> Option<Driver> {
     let conn = get_connection().unwrap();
@@ -292,4 +292,57 @@ pub fn get_driver_season_info(driver_id: i32, season_year: i32) -> Option<Season
         overall_position,
         races,
     })
+}
+
+// Should be moved to the database module?
+pub fn get_driver_data() -> Vec<Vec<String>> {
+    let conn = get_connection().unwrap();
+
+    let mut stmt = conn
+        .prepare(
+            r#"
+        SELECT 
+            d.first_name || ' ' || d.last_name AS driver_name,
+            d.racing_number,
+            d.rating,
+            c.name AS country,
+            t.short_name AS team
+        FROM drivers d
+        JOIN countries c ON d.fk_country_id = c.id
+        LEFT JOIN driver_contracts dc ON dc.fk_driver_id = d.id
+        LEFT JOIN teams t ON dc.fk_team_id = t.id
+        WHERE dc.date_end IS NULL OR dc.date_end > strftime('%s', 'now') * 1000
+        "#,
+        )
+        .unwrap();
+
+    let driver_iter = stmt
+        .query_map([], |row| {
+            let driver_name: String = row.get(0)?;
+            let racing_number: i32 = row.get(1)?; // INTEGER in schema
+            let rating: i32 = row.get(2)?; // INTEGER in schema
+            let country: String = row.get(3)?;
+            let team: Option<String> = row.get(4)?; // Handle NULL teams
+
+            Ok(vec![
+                driver_name,
+                racing_number.to_string(), // Convert i32 to String
+                rating.to_string(),        // Convert i32 to String
+                country,
+                team.unwrap_or_default(), // Use empty string for NULL
+            ])
+        })
+        .unwrap();
+
+    let mut data: Vec<Vec<String>> = Vec::new();
+    for driver in driver_iter {
+        match driver {
+            Ok(driver_data) => data.push(driver_data),
+            Err(_) => continue, // Skip rows with errors
+        }
+    }
+
+    println!("Driver data: {:?}", data); // Debug print
+
+    data
 }

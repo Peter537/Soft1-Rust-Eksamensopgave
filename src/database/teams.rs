@@ -1,4 +1,5 @@
 use crate::model::season::{RaceInfo, SeasonInfo};
+use crate::model::team::TeamBase;
 use crate::{database::connection::get_connection, model::team::Team};
 use std::collections::HashMap;
 
@@ -87,9 +88,7 @@ pub fn get_selected_team(game_number: &str) -> Option<String> {
         .prepare("SELECT t.short_name FROM teams t JOIN game_config c ON t.id = c.selected_team WHERE c.id = ?1")
         .unwrap();
 
-    let selected_team = stmt
-        .query_row([game_number], |row| row.get(0))
-        .ok();
+    let selected_team = stmt.query_row([game_number], |row| row.get(0)).ok();
 
     if let Some(ref team) = selected_team {
         println!("Selected team for game {}: {}", game_number, team);
@@ -99,7 +98,6 @@ pub fn get_selected_team(game_number: &str) -> Option<String> {
 
     selected_team
 }
-
 
 pub fn get_own_team_standing() -> Option<(String, Vec<String>, i32)> {
     // Open a connection to the SQLite database
@@ -214,7 +212,7 @@ pub fn get_team_info(team_id: &i32) -> Option<Team> {
         .prepare(
             r#"
             SELECT 
-                id, short_name, full_name, fk_country_id, base_city, first_entry, 
+                id, short_name, full_name, first_entry, 
                 team_chief, chassis, power_unit, image_team, image_car
             FROM teams
             WHERE id = ?
@@ -229,14 +227,12 @@ pub fn get_team_info(team_id: &i32) -> Option<Team> {
             id: row.get(0).unwrap(),
             short_name: row.get(1).unwrap(),
             full_name: row.get(2).unwrap(),
-            country_id: row.get(3).unwrap(),
-            base_city: row.get(4).unwrap(),
-            first_entry: row.get(5).unwrap(),
-            team_chief: row.get(6).unwrap(),
-            chassis: row.get(7).unwrap(),
-            power_unit: row.get(8).unwrap(),
-            image_path_logo: row.get(9).unwrap(),
-            image_path_car: row.get(10).unwrap(),
+            first_entry: row.get(3).unwrap(),
+            team_chief: row.get(4).unwrap(),
+            chassis: row.get(5).unwrap(),
+            power_unit: row.get(6).unwrap(),
+            image_path_logo: row.get(7).unwrap(),
+            image_path_car: row.get(8).unwrap(),
         };
         Some(team)
     } else {
@@ -414,4 +410,94 @@ pub fn get_team_season_info(team_id: i32, season_year: i32) -> Option<SeasonInfo
         overall_position,
         races,
     })
+}
+
+// should this be moved to the database module?
+pub fn get_team_data() -> Vec<Vec<String>> {
+    let conn = get_connection().unwrap();
+
+    let mut stmt = conn
+        .prepare(
+            r#"
+        SELECT 
+            t.short_name,
+            t.full_name,
+            COALESCE((
+                SELECT SUM(rdr.points)
+                FROM race_driver_results rdr
+                WHERE rdr.fk_team_id = t.id
+            ), 0) AS total_points,
+            (
+                SELECT GROUP_CONCAT(d2.first_name || ' ' || d2.last_name, ',')
+                FROM driver_contracts dc2
+                JOIN drivers d2 ON dc2.fk_driver_id = d2.id
+                WHERE dc2.fk_team_id = t.id
+                AND (dc2.date_end IS NULL OR dc2.date_end > strftime('%s', 'now') * 1000)
+                ORDER BY d2.last_name
+            ) AS drivers
+        FROM teams t
+        GROUP BY t.id, t.full_name
+        ORDER BY total_points DESC
+        "#,
+        )
+        .unwrap();
+
+    let team_iter = stmt
+        .query_map([], |row| {
+            let short_name: String = row.get(0)?;
+            let team_name: String = row.get(1)?;
+            let points: i32 = row.get(2)?;
+            let drivers: Option<String> = row.get(3)?; // GROUP_CONCAT may return NULL
+
+            let driver1 = drivers
+                .as_ref()
+                .and_then(|d| d.split(',').next())
+                .unwrap_or("");
+
+            let driver2 = drivers
+                .as_ref()
+                .and_then(|d| d.split(',').nth(1))
+                .unwrap_or("");
+
+            Ok(vec![
+                short_name,
+                team_name,
+                points.to_string(),
+                driver1.to_string(),
+                driver2.to_string(),
+            ])
+        })
+        .unwrap();
+
+    let mut teams: Vec<Vec<String>> = Vec::new();
+    for team in team_iter {
+        teams.push(team.unwrap());
+    }
+
+    println!("Team data: {:?}", teams); // Debug print
+
+    teams
+}
+
+pub fn get_team_base_by_team_id(team_id: i32) -> Option<TeamBase> {
+    let conn = get_connection().unwrap();
+    let mut stmt = conn
+        .prepare(
+            "SELECT tb.city, c.name FROM team_bases tb JOIN countries c ON c.id = tb.fk_country_id WHERE tb.fk_team_id = ?",
+        )
+        .unwrap();
+
+    let base_city = stmt.query_row([team_id], |row| {
+        let city: String = row.get(0)?;
+        let country: String = row.get(1)?;
+        Ok(TeamBase {
+            city,
+            country_name: country,
+        })
+    });
+
+    match base_city {
+        Ok(base) => Some(base),
+        Err(_) => None,
+    }
 }

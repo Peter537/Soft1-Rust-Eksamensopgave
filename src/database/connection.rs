@@ -2,12 +2,11 @@ use rusqlite::Connection;
 use std::env;
 use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicI32, Ordering};
+use std::sync::atomic::Ordering;
 use std::sync::{Mutex, MutexGuard};
 
 // Define the static mutex to hold the database connection
 static CONNECTION: Mutex<Option<Connection>> = Mutex::new(None);
-static GAME_NUMBER: AtomicI32 = AtomicI32::new(0); // TODO: Important ! Make sure this is updated when creating/loading a game
 
 pub struct ConnectionGuard(MutexGuard<'static, Option<Connection>>);
 
@@ -32,7 +31,7 @@ pub fn get_connection() -> Result<ConnectionGuard, String> {
         .lock()
         .map_err(|_| "Failed to lock connection mutex".to_string())?;
 
-    let game_number = GAME_NUMBER.load(Ordering::SeqCst);
+    let game_number = super::GAME_NUMBER.load(Ordering::SeqCst);
     if game_number == 0 {
         // If the game number is not set, return an error
         return Err("Game number is not set".to_string());
@@ -58,10 +57,8 @@ pub fn get_connection() -> Result<ConnectionGuard, String> {
     Ok(ConnectionGuard(conn_guard))
 }
 
-pub fn set_game_number(number: i32) {
-    // Set the game number in the static variable
-    GAME_NUMBER.store(number, Ordering::SeqCst);
-    // set the connection to None to force a new connection on next call
+pub fn delete_connection() {
+    // Lock the mutex to safely access or modify the connection
     let mut conn_guard = CONNECTION.lock().unwrap();
     *conn_guard = None; // Reset the connection to force a new one on next call
 }

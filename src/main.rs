@@ -1,11 +1,11 @@
+use druid::{AppLauncher, PlatformError, WindowDesc};
+use ui::MyAppDelegate;
+
 mod backend;
 mod database;
 mod model;
 mod ui;
 mod util;
-
-use druid::{AppLauncher, PlatformError, WindowDesc};
-use ui::MyAppDelegate;
 
 fn main() -> Result<(), PlatformError> {
     util::appdata::create_files_if_not_exist();

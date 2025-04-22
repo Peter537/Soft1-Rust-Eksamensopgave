@@ -23,3 +23,18 @@ pub fn update_current_date(date: &NaiveDate) {
         .unwrap();
     stmt.execute([date.to_string()]).unwrap();
 }
+
+pub fn has_selected_team() -> bool {
+    let conn = get_connection().unwrap();
+    let mut stmt = conn
+        .prepare("SELECT COUNT(*) FROM game_config WHERE selected_team IS NOT NULL")
+        .unwrap();
+    let row = stmt.query_row([], |row| {
+        let count: i32 = row.get(0)?;
+        Ok(count)
+    });
+    match row {
+        Ok(count) => count > 0,
+        Err(_) => false,
+    }
+}

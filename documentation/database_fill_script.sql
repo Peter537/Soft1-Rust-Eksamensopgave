@@ -54,40 +54,53 @@ INSERT INTO drivers (id, first_name, last_name, rating, fk_country_id, date_of_b
 (20, 'Oliver', 'Bearman', 73, 25, '2005-05-08', 87, 'bearman');
 
 -- Populate the teams table with team details
-INSERT INTO teams (id, short_name, full_name, fk_country_id, base_city, first_entry, team_chief, chassis, power_unit, image_team, image_car) VALUES
-(1, 'Alpine', 'BWT Alpine F1 Team', 9, 'Enstone', 2021, 'Oliver Oakes', 'A525', 'Renault E-Tech RE25', 'alpine', 'alpine'),
-(2, 'Aston Martin', 'Aston Martin Aramco F1 Team', 25, 'Silverstone', 2021, 'Andy Cowell', 'AMR25', 'Mercedes-AMG F1 M16', 'aston_martin', 'aston_martin'),
-(3, 'Ferrari', 'Scuderia Ferrari HP', 12, 'Maranello', 1950, 'Fred Vasseur', 'SF-25', 'Ferrari 066/12', 'ferrari', 'ferrari'),
-(4, 'Haas', 'MoneyGram Haas F1 Team', 26, 'Kannapolis', 2016, 'Ayao Komatsu', 'VF-25', 'Ferrari 066/12', 'haas', 'haas'),
-(5, 'McLaren', 'McLaren Formula 1 Team', 25, 'Woking', 1966, 'Andrea Stella', 'MCL39', 'Mercedes-AMG F1 M16', 'mclaren', 'mclaren'),
-(6, 'Mercedes', 'Mercedes-AMG Petronas F1 Team', 10, 'Brackley', 2010, 'Toto Wolff', 'F1 W16', 'Mercedes-AMG F1 M16', 'mercedes', 'mercedes'),
-(7, 'Racing Bulls', 'Visa Cash App Racing Bulls F1 Team', 12, 'Faenza', 2006, 'Laurent Mekies', 'VCARB 02', 'Honda RBPTH002', 'racing_bulls', 'racing_bulls'),
-(8, 'Red Bull Racing', 'Oracle Red Bull Racing', 2, 'Milton Keynes', 2005, 'Christian Horner', 'RB21', 'Honda RBPTH002', 'red_bull_racing', 'red_bull_racing'),
-(9, 'Kick Sauber', 'Stake F1 Team Kick Sauber', 22, 'Hinwil', 1993, 'Jonathan Wheatley', 'C45', 'Ferrari 066/12', 'kick_sauber', 'kick_sauber'),
-(10, 'Williams', 'Atlassian Williams Racing', 25, 'Grove', 1978, 'James Vowles', 'FW47', 'Mercedes-AMG F1 M16', 'williams', 'williams');
+INSERT INTO teams (id, short_name, full_name, first_entry, team_chief, chassis, power_unit, image_team, image_car) VALUES
+(1, 'Alpine', 'BWT Alpine Formula One Team', 2021, 'Oliver Oakes', 'A525', 'Renault', 'alpine', 'alpine'),
+(2, 'Aston Martin', 'Aston Martin Aramco Formula One Team', 2021, 'Andy Cowell', 'AMR25', 'Mercedes', 'aston_martin', 'aston_martin'),
+(3, 'Ferrari', 'Scuderia Ferrari HP', 1950, 'Frédéric Vasseur', 'SF-25', 'Ferrari', 'ferrari', 'ferrari'),
+(4, 'Haas', 'MoneyGram Haas F1 Team', 2016, 'Ayao Komatsu', 'VF-25', 'Ferrari', 'haas', 'haas'),
+(5, 'McLaren', 'McLaren Formula 1 Team', 1966, 'Andrea Stella', 'MCL39', 'Mercedes', 'mclaren', 'mclaren'),
+(6, 'Mercedes', 'Mercedes-AMG PETRONAS Formula One Team', 2010, 'Toto Wolff', 'W16', 'Mercedes', 'mercedes', 'mercedes'),
+(7, 'Racing Bulls', 'Visa Cash App Racing Bulls Formula One Team', 2006, 'Laurent Mekies', 'VCARB 02', 'Honda RBPT', 'racing_bulls', 'racing_bulls'),
+(8, 'Red Bull Racing', 'Oracle Red Bull Racing', 2005, 'Christian Horner', 'RB21', 'Honda RBPT', 'red_bull_racing', 'red_bull_racing'),
+(9, 'Kick Sauber', 'Stake F1 Team Kick Sauber', 1993, 'Jonathan Wheatley', 'C45', 'Ferrari', 'kick_sauber', 'kick_sauber'),
+(10, 'Williams', 'Atlassian Williams Racing', 1978, 'James Vowles', 'FW47', 'Mercedes', 'williams', 'williams');
+
+-- Populate the team_bases table with team base details
+INSERT INTO team_bases (id, fk_team_id, city, fk_country_id) VALUES
+(1, 1, 'Enstone', 25),          -- Alpine base in Enstone, United Kingdom
+(2, 2, 'Silverstone', 25),      -- Aston Martin base in Silverstone, United Kingdom
+(3, 3, 'Maranello', 12),        -- Ferrari base in Maranello, Italy
+(4, 4, 'Kannapolis', 26),       -- Haas base in Kannapolis, United States
+(5, 5, 'Woking', 25),           -- McLaren base in Woking, United Kingdom
+(6, 6, 'Brackley', 25),         -- Mercedes base in Brackley, United Kingdom
+(7, 7, 'Faenza', 12),           -- Racing Bulls base in Faenza, Italy
+(8, 8, 'Milton Keynes', 25),    -- Red Bull Racing base in Milton Keynes, United Kingdom
+(9, 9, 'Hinwil', 22),           -- Kick Sauber base in Hinwil, Switzerland
+(10, 10, 'Grove', 25);          -- Williams base in Grove, United Kingdom
 
 -- Populate the driver_contracts table, including mid-season team switches
 INSERT INTO driver_contracts (fk_driver_id, fk_team_id, date_begin, date_end, monthly_wage) VALUES
-(1, 8, '2025-01-01', '2025-12-31', 100000.0),  -- Max Verstappen with Red Bull
-(2, 5, '2025-01-01', '2025-12-31', 100000.0),  -- Lando Norris with McLaren
-(3, 9, '2025-01-01', '2025-12-31', 100000.0), -- Gabriel Bortoleto with Kick Sauber
-(4, 7, '2025-01-01', '2025-12-31', 100000.0),  -- Isack Hadjar with RB
-(5, 1, '2025-01-01', '2025-12-31', 100000.0),  -- Jack Doohan with Alpine
-(6, 1, '2025-01-01', '2025-12-31', 100000.0),  -- Pierre Gasly with Alpine
-(7, 6, '2025-01-01', '2025-12-31', 100000.0),  -- Andrea Kimi Antonelli with Mercedes
-(8, 2, '2025-01-01', '2025-12-31', 100000.0),  -- Fernando Alonso with Aston Martin
-(9, 3, '2025-01-01', '2025-12-31', 100000.0),  -- Charles Leclerc with Ferrari
-(10, 2, '2025-01-01', '2025-12-31', 100000.0), -- Lance Stroll with Aston Martin
-(11, 8, '2025-01-01', '2025-12-31', 100000.0), -- Yuki Tsunoda with Red Bull
-(12, 10, '2025-01-01', '2025-12-31', 100000.0),-- Alexander Albon with Williams
-(13, 9, '2025-01-01', '2025-12-31', 100000.0), -- Nico Hulkenberg with Kick Sauber
-(14, 7, '2025-01-01', '2025-12-31', 100000.0), -- Liam Lawson with RB
-(15, 4, '2025-01-01', '2025-12-31', 100000.0), -- Esteban Ocon with Haas
-(16, 3, '2025-01-01', '2025-12-31', 100000.0), -- Lewis Hamilton with Ferrari
-(17, 10, '2025-01-01', '2025-12-31', 100000.0),-- Carlos Sainz Jr. with Williams
-(18, 6, '2025-01-01', '2025-12-31', 100000.0), -- George Russell with Mercedes
-(19, 5, '2025-01-01', '2025-12-31', 100000.0), -- Oscar Piastri with McLaren
-(20, 4, '2025-01-01', '2025-12-31', 100000.0); -- Oliver Bearman with Haas
+(1, 8, '2025-01-01', '2025-12-31', 100000.0),   -- Max Verstappen with Red Bull
+(2, 5, '2025-01-01', '2025-12-31', 100000.0),   -- Lando Norris with McLaren
+(3, 9, '2025-01-01', '2025-12-31', 100000.0),   -- Gabriel Bortoleto with Kick Sauber
+(4, 7, '2025-01-01', '2025-12-31', 100000.0),   -- Isack Hadjar with RB
+(5, 1, '2025-01-01', '2025-12-31', 100000.0),   -- Jack Doohan with Alpine
+(6, 1, '2025-01-01', '2025-12-31', 100000.0),   -- Pierre Gasly with Alpine
+(7, 6, '2025-01-01', '2025-12-31', 100000.0),   -- Andrea Kimi Antonelli with Mercedes
+(8, 2, '2025-01-01', '2025-12-31', 100000.0),   -- Fernando Alonso with Aston Martin
+(9, 3, '2025-01-01', '2025-12-31', 100000.0),   -- Charles Leclerc with Ferrari
+(10, 2, '2025-01-01', '2025-12-31', 100000.0),  -- Lance Stroll with Aston Martin
+(11, 8, '2025-01-01', '2025-12-31', 100000.0),  -- Yuki Tsunoda with Red Bull
+(12, 10, '2025-01-01', '2025-12-31', 100000.0), -- Alexander Albon with Williams
+(13, 9, '2025-01-01', '2025-12-31', 100000.0),  -- Nico Hulkenberg with Kick Sauber
+(14, 7, '2025-01-01', '2025-12-31', 100000.0),  -- Liam Lawson with RB
+(15, 4, '2025-01-01', '2025-12-31', 100000.0),  -- Esteban Ocon with Haas
+(16, 3, '2025-01-01', '2025-12-31', 100000.0),  -- Lewis Hamilton with Ferrari
+(17, 10, '2025-01-01', '2025-12-31', 100000.0), -- Carlos Sainz Jr. with Williams
+(18, 6, '2025-01-01', '2025-12-31', 100000.0),  -- George Russell with Mercedes
+(19, 5, '2025-01-01', '2025-12-31', 100000.0),  -- Oscar Piastri with McLaren
+(20, 4, '2025-01-01', '2025-12-31', 100000.0);  -- Oliver Bearman with Haas
 
 -- Populate the circuits table with circuit details for the first few races
 INSERT INTO circuits (id, name, fk_country_id, city, length_km, lap_amount, image_circuit) VALUES

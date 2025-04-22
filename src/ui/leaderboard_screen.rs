@@ -1,14 +1,10 @@
-use druid::widget::{Button, CrossAxisAlignment, Flex, Label, MainAxisAlignment, Scroll};
-use druid::Widget;
-
 use super::component::table::make_table;
 use super::AppState;
-use super::Screen::Main;
-
 use crate::database::driver::get_top_driver_standings;
 use crate::database::teams::get_top_teams_standings;
-
 use crate::ui::component::goto::{goto_driver, goto_team};
+use druid::widget::{CrossAxisAlignment, Flex, Label, MainAxisAlignment, Scroll};
+use druid::Widget;
 
 pub fn build_screen() -> impl Widget<AppState> {
     let all_drivers = get_top_driver_standings(None).unwrap_or(vec![]);
@@ -76,16 +72,5 @@ pub fn build_screen() -> impl Widget<AppState> {
         .with_spacer(40.0)
         .with_flex_child(left_column, 1.0);
 
-    // Remove later
-    let back_to_main = Button::new("Back to Main").on_click(|_ctx, data: &mut AppState, _env| {
-        data.current_screen = Main;
-        _ctx.request_update();
-    });
-
-    Flex::column()
-        .with_spacer(20.0)
-        .with_child(Label::new("Leaderboard Screen"))
-        .with_child(back_to_main)
-        .with_spacer(40.0)
-        .with_child(layout)
+    Flex::column().with_spacer(20.0).with_child(layout)
 }
