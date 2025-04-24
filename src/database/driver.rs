@@ -283,7 +283,7 @@ pub fn get_driver_season_info(driver_id: i32, season_year: i32) -> Option<Season
 
     // If driver not found in results, return None
     if !found_driver {
-        return None;
+        overall_position = 1; // TODO: Handle this case appropriately, maybe an Optional
     }
 
     Some(SeasonInfo {

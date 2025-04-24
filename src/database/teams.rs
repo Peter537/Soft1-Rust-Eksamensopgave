@@ -401,7 +401,7 @@ pub fn get_team_season_info(team_id: i32, season_year: i32) -> Option<SeasonInfo
 
     // If team not found in results, return None
     if !found_team {
-        return None;
+        overall_position = 1; // TODO: Handle this case appropriately, maybe an Optional
     }
 
     Some(SeasonInfo {
