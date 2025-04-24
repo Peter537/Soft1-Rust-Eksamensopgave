@@ -102,7 +102,7 @@ CREATE TABLE race_driver_results (
 CREATE TABLE laps (
   id INTEGER PRIMARY KEY,
   fk_race_driver_result_id INTEGER NOT NULL,
-  lap_time_ms DOUBLE NOT NULL,
+  lap_time_ms INTEGER NOT NULL,
   lap_number INTEGER NOT NULL,
   FOREIGN KEY (fk_race_driver_result_id) REFERENCES race_driver_results(id)
 );
