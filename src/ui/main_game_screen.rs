@@ -118,7 +118,7 @@ pub fn build_screen() -> impl Widget<AppState> {
     ];
 
     // make dommain for the table if empty
-    let mut data = vec![vec!["-".to_string(); cols.len()]];
+    let mut data = vec![vec!["".to_string(); cols.len()]];
 
     if !top_three_drivers.is_empty() {
         data = top_three_drivers

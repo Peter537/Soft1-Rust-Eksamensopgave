@@ -8,7 +8,7 @@ use druid::EventCtx;
 pub fn goto_driver() -> Box<dyn Fn(&str) -> Box<dyn Fn(&mut EventCtx, &mut AppState)>> {
     Box::new(|driver: &str| {
         let driver = driver.to_string();
-        if driver == "TBD" {
+        if driver == "TBD" || driver.is_empty() {
             return Box::new(move |_ctx: &mut EventCtx, _data: &mut AppState| {});
         }
 
