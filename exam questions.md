@@ -199,20 +199,235 @@ RefCell giver en form for indirekte mutabilitet. Normalt kræver Rust, at data k
 
 ### 6. Pattern Matching and Control Flow
 
-Vi bruger f.eks. pattern-matching i mod.rs' `build_ui` for at vælge hvilken UI der skal vises.
+Vi bruger pattern matching i vores projekt til at forenkle kompleks kontrolflow, især når vi skal vælge hvilken UI der skal vises baseret på applikationens tilstand. Dette gør koden mere læsbar og effektiv sammenlignet med traditionelle `if-else` eller `switch` statements.
+
+#### Eksempel på Pattern Matching i `build_ui`
+
+I `mod.rs` bruger vi pattern matching til at vælge hvilken skærm der skal vises baseret på den aktuelle `Screen` i `AppState`:
+
+```rust
+pub fn build_ui() -> impl druid::Widget<AppState> {
+    ViewSwitcher::new(
+        |data: &AppState, _env| (data.current_screen.clone(), data.game_number.clone()),
+        |(screen, _game_number), _data, _env| -> Box<dyn druid::Widget<AppState>> {
+            match screen {
+                Screen::Main => Box::new(main_screen::build_screen()),
+                Screen::TeamScreen { team_id } => Box::new(with_navbar(team_screen::build_screen(team_id))),
+                Screen::ChooseTeam => Box::new(choose_team_screen::build_screen()),
+                Screen::MainGameScreen => Box::new(with_navbar(main_game_screen::build_screen())),
+                Screen::RaceScreen { race_id } => Box::new(with_navbar(race_screen::build_screen(*race_id))),
+                Screen::Leaderboard => Box::new(with_navbar(leaderboard_screen::build_screen())),
+                Screen::TeamListScreen => Box::new(with_navbar(team_list_screen::build_screen())),
+                Screen::DriverScreen { driver_id } => Box::new(with_navbar(driver_screen::build_screen(driver_id))),
+                Screen::DriverListScreen => Box::new(with_navbar(driver_list_screen::build_screen())),
+                Screen::RaceScheduleScreen => Box::new(with_navbar(race_schedule_screen::build_screen())),
+            }
+        },
+    )
+}
+```
+
+Her matcher vi på `Screen`-enum'en, som repræsenterer de forskellige skærme i applikationen. Hver variant af `Screen` er forbundet med en specifik funktion, der bygger den tilsvarende UI.
+
+#### Fordele ved Pattern Matching
+
+1. **Læsbarhed**: Koden er nem at læse og forstå, da hver `Screen`-variant er klart defineret med sin tilhørende handling.
+2. **Sikkerhed**: Rust sikrer, at alle mulige varianter af `Screen` bliver håndteret. Hvis en ny variant tilføjes, vil kompilatoren give en fejl, hvis den ikke bliver matchet.
+3. **Effektivitet**: Pattern matching er mere kompakt og mindre fejlbehæftet end en række `if-else` statements.
+
+#### Sammenligning med Switch Statements
+
+I andre sprog som C++ eller Java kunne vi have brugt en `switch` statement til at opnå lignende funktionalitet. Men Rusts pattern matching er mere kraftfuldt, da det kan håndtere komplekse strukturer og ikke kun simple værdier. For eksempel kan vi matche på strukturer som `Screen::RaceScreen { race_id }` og samtidig udtrække værdien af `race_id`.
+
+#### Opsummering
+
+Pattern matching i Rust gør det muligt at skrive mere kompakt, læsbar og sikker kode. I vores projekt har det været en essentiel del af at håndtere kontrolflowet for UI-rendering, og det har gjort det nemt at tilføje nye skærme uden at introducere fejl.
 
 ### 7. Structs and Data Organization
 
-Vi bruger Structs når vi henter noget ud fra databasen.
+#### 7.1 Structs
 
-Vi bruger Tuples/Arrays når det er små-ting inde i koden som skal flyttes rundt på.
+Structs bliver i vores projekt brugt til at repræsentere komplekse dataentiteter som `AppState`, `Screen` og alle database-modeller. Eksempelvis bruges følgende struct til at repræsentere en lap i et race:
+
+```rust
+pub struct Lap {
+    pub id: i32,
+    pub race_driver_result_id: i32,
+    pub lap_time_ms: i32,
+    pub lap_number: i32,
+}
+```
+
+Derudover bruges structs også til at håndtere applikationens tilstand. For eksempel bruges `AppState` til at holde styr på nuværende skærm, valgte hold og andre vigtige data:
+
+```rust
+#[derive(Clone, Data, Lens)]
+pub struct AppState {
+    pub current_screen: Screen,
+    pub game_number: String,
+    pub selected_team: Option<String>,
+    pub current_date: String,
+    pub last_race_update_time: String,
+    pub show_modal: bool,
+}
+```
+
+Her bruger vi `#[derive(Clone, Data, Lens)]` til automatisk at implementere vigtige traits, som er nødvendige for integration med `druid` frameworket. `Clone` gør det muligt at kopiere data, `Data` bruges til at spore ændringer i tilstanden, og `Lens` gør det muligt at binde specifikke felter til UI-komponenter.
+
+Vi bruger også `impl` til at tilføje funktionalitet til structs. For eksempel har vi implementeret en `Default` funktion til `AppState`, som initialiserer standardværdier:
+
+```rust
+impl Default for AppState {
+    fn default() -> Self {
+        AppState {
+            current_screen: Screen::Main,
+            game_number: String::new(),
+            selected_team: None,
+            show_modal: false,
+            current_date: NaiveDate::from_ymd_opt(2025, 1, 1).unwrap().to_string(),
+            last_race_update_time: Utc::now().to_string(),
+        }
+    }
+}
+```
+
+Dette gør det nemt at oprette en ny `AppState` med foruddefinerede værdier.
+
+---
+
+#### 7.2 Tuples/Arrays
+
+Vi bruger tuples og arrays til mere simple funktioner i vores projekt, hvor data kun skal grupperes midlertidigt eller ikke kræver navngivne felter. For eksempel bruges tuples til at returnere flere værdier fra en funktion eller til at repræsentere rækker af data i UI-komponenter:
+
+```rust
+let driver_data = vec![
+    ("Lewis Hamilton", 44, "Mercedes"),
+    ("Max Verstappen", 1, "Red Bull"),
+];
+```
+
+Arrays bruges, når vi arbejder med en fast størrelse af data, som ikke ændrer sig under runtime. For eksempel kan vi bruge arrays til at definere faste værdier, der bruges i UI eller beregninger.
+
+---
+
+#### Opsummering
+
+Structs bruges til at repræsentere komplekse og navngivne data, især når vi arbejder med databasen eller applikationens tilstand. Derive-attributter som `Clone`, `Data` og `Lens` gør det nemt at integrere structs med `druid` frameworket. Tuples og arrays bruges til enklere og midlertidige grupperinger af data, hvor navngivne felter ikke er nødvendige. Denne tilgang sikrer, at vores data er organiseret og let at arbejde med i hele projektet.
+
 
 ### 8. Module System and Code Organization
 
-In each directory, we have a file `mod.rs` which is the entry point for that directory.
-
 Vi har en `mod.rs` fil i hver mappe, som er entry-pointet for den mappe. Inde i den fil vælger vi så hvad som andre mapper skal have adgang til (ved `pub mod`), og hvad skal være privat for mappen (ved `mod`).
+
+--
+
+Vi bruger pub og mod til at gøre metoder, objekter og strukturer 'accessible' fra forskellige filer i vores projekt. Eksempelvis laver vi i hver underfil af vores UI en "build_screen" funktion som offentliggøres gennem "pub fn" og dernæst bruges i AppState til at rendere nuværende skærm "conditionally":
+
+```
+pub fn build_screen() -> impl Widget<AppState> {
+    Flex::column().with_spacer(20.0).with_child(make_table(
+        vec![
+            "Name".to_string(),
+            "Racing Number".to_string(),
+            "Rating".to_string(),
+            "Country".to_string(),
+            "Team".to_string(),
+        ],
+        get_driver_data(),
+        vec![(0, goto_driver()), (4, goto_team())],
+    ))
+}
+```
+
+Endvidere har hvert folder (modul) hvert sit **mod.rs** hvor vi gør delene til offentlige moduler, ligesom der gøres her med vores goto og table komponenenter:
+
+```
+pub mod goto;
+pub mod table;
+```
+
+"pub mod" bruges til at offtenliggøre filer og funktioner, men når de allerede er offentlige kan man gøre som vi har gjort i mod.rs i "ui" folderen; hvilket er udelukkende at bruge de offentliggjorte entiteter uden at behøve at gøre dem public igen.
+
+```
+mod choose_team_screen;
+mod main_game_screen;
+mod main_screen;
+mod race_screen;
+
+mod driver_list_screen;
+mod driver_screen;
+mod leaderboard_screen;
+mod race_schedule_screen;
+mod team_list_screen;
+mod team_screen;
+```
+
+
+
 
 ### 9. Concurrency in Rust
 
-Vi bruger Mutex i database-connection håndteringen.
+Vi bruger Rusts concurrency model til at sikre trådsikker adgang til delte ressourcer og undgå datarace. I vores projekt er concurrency primært implementeret gennem brug af `Mutex` til at håndtere delte ressourcer, især i forbindelse med databaseforbindelser.
+
+#### Shared State med `Mutex`
+Vi bruger `Mutex` til at sikre, at kun én tråd ad gangen kan få adgang til den delte databaseforbindelse. Dette forhindrer datarace og sikrer, at vores applikation forbliver stabil. Eksempelvis i `src/database/connection.rs` er vores databaseforbindelse pakket ind i en `Mutex`:
+
+```rust
+static CONNECTION: Mutex<Option<Connection>> = Mutex::new(None);
+```
+
+For at få adgang til forbindelsen bruger vi `ConnectionGuard`, som sikrer eksklusiv adgang ved hjælp af `MutexGuard`:
+
+```rust
+pub struct ConnectionGuard(MutexGuard<'static, Option<Connection>>);
+
+impl Deref for ConnectionGuard {
+    type Target = Connection;
+
+    fn deref(&self) -> &Self::Target {
+        (*self.0).as_ref().unwrap()
+    }
+}
+
+impl DerefMut for ConnectionGuard {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        (*self.0).as_mut().unwrap()
+    }
+}
+```
+
+Dette design sikrer, at databaseforbindelsen kan deles sikkert mellem forskellige dele af applikationen uden risiko for samtidige adgangsproblemer.
+
+#### Databaseoperationer
+Concurrency håndteres også indirekte gennem transaktioner, som grupperer flere databaseoperationer i en enkelt atomisk enhed. Eksempelvis i `src/database/race.rs`:
+
+```rust
+let mut conn = get_connection().unwrap();
+let tx = conn.transaction().unwrap();
+
+// Udfør flere operationer inden for transaktionen
+let mut stmt_race_driver_results = tx.prepare(
+    "INSERT INTO race_driver_results (...) VALUES (...)"
+).unwrap();
+
+let mut stmt_laps = tx.prepare(
+    "INSERT INTO laps (...) VALUES (...)"
+).unwrap();
+
+// Commit transaktionen
+tx.commit().unwrap();
+```
+
+Dette sikrer, at alle operationer enten udføres fuldt ud eller slet ikke, hvilket forhindrer inkonsistens i databasen.
+
+#### Hvorfor vi ikke bruger Threads, Channels eller Async/Await
+I vores projekt bruger vi ikke eksplicitte tråde (`std::thread`), kanaler (`std::sync::mpsc`) eller asynkron programmering (`async/await`), da `druid` frameworket kører på en enkelttrådet event loop. Dette gør det nemmere at håndtere UI-rendering og state management uden behov for avanceret concurrency.
+
+Hvis vi i fremtiden skulle tilføje baggrundsopgaver som datahentning eller tunge beregninger, kunne vi integrere disse værktøjer for at forbedre performance og responsivitet. Eksempelvis:
+- **Threads** kunne bruges til at udføre tunge beregninger i baggrunden.
+- **Channels** kunne bruges til kommunikation mellem tråde.
+- **Async/Await** kunne bruges til ikke-blokerende I/O-operationer.
+
+#### Opsummering
+I dette projekt er concurrency primært implementeret gennem brug af `Mutex` til delte ressourcer og transaktioner til databaseoperationer. Selvom vi ikke bruger tråde, kanaler eller async/await, sikrer Rusts sikkerhedsgarantier, at vores nuværende model er robust og fri for datarace. Hvis der opstår behov for yderligere concurrency i fremtiden, kan vi nemt udvide projektet med disse værktøjer.
+
