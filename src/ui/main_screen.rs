@@ -42,7 +42,7 @@ pub fn build_screen() -> impl Widget<AppState> {
         .boxed()
 }
 
-pub fn build_modal() -> impl Widget<AppState> {
+fn build_modal() -> impl Widget<AppState> {
     Either::new(
         |data: &AppState, _env| data.show_modal,
         Container::new({
