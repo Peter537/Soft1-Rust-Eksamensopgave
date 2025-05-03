@@ -1,7 +1,7 @@
 use super::component::goto::goto_race;
 use super::AppState;
 use crate::database::country::get_country_by_id;
-use crate::database::driver::{get_driver_by_id, get_driver_season_info};
+use crate::database::driver::{get_driver_by_id, get_driver_contract, get_driver_season_info};
 use crate::model::season::RaceInfo;
 use crate::ui::component::table::make_table;
 use crate::util::image_loader::{get_country, get_driver};
@@ -19,6 +19,8 @@ pub fn build_screen(driver_id: &i32) -> impl Widget<AppState> {
         }
     };
 
+    let driver_contract = get_driver_contract(driver_id).unwrap();
+
     let mut right_column = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
     right_column.add_child(get_driver(driver.image_path.as_str()));
     right_column.add_child(get_country(
@@ -33,6 +35,21 @@ pub fn build_screen(driver_id: &i32) -> impl Widget<AppState> {
     right_column.add_child(Label::new(format!(
         "Racing Number:\t{}",
         driver.racing_number
+    )));
+    right_column.add_spacer(10.0);
+    right_column.add_child(Label::new(format!("Contract Details:")));
+    right_column.add_spacer(5.0);
+    right_column.add_child(Label::new(format!(
+        "Start:\t\t\t{}",
+        driver_contract.date_begin
+    )));
+    right_column.add_child(Label::new(format!(
+        "End:\t\t\t{}",
+        driver_contract.date_end
+    )));
+    right_column.add_child(Label::new(format!(
+        "Monthly Wage:\t{}",
+        driver_contract.monthly_wage
     )));
 
     let season_info = get_driver_season_info(driver.id, 2025).unwrap();

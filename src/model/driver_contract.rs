@@ -4,5 +4,5 @@ pub struct DriverContract {
     pub team_id: i32,
     pub date_begin: String,
     pub date_end: String,
-    pub monthly_wage: String,
+    pub monthly_wage: f64,
 }
