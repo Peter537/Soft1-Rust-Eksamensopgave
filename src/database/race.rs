@@ -341,8 +341,7 @@ pub fn get_race_list() -> Option<Vec<(String, String, String, String)>> {
     Some(race_list)
 }
 
-pub fn get_race_schedule_info(
-) -> Option<Vec<(String, String, String, String, String, String, String)>> {
+pub fn get_race_schedule_info() -> Vec<Vec<String>> {
     let conn = get_connection().unwrap();
 
     let mut stmt = conn.prepare(
@@ -382,10 +381,21 @@ pub fn get_race_schedule_info(
         })
         .unwrap();
 
-    let mut race_list: Vec<(String, String, String, String, String, String, String)> = Vec::new();
+    let mut race_list: Vec<Vec<String>> = Vec::new();
+    //let mut race_list: Vec<(String, String, String, String, String, String, String)> = Vec::new();
     for row in rows {
         match row {
             Ok((date, country_name, grand_prix_name, status, pos1_name, pos2_name, pos3_name)) => {
+                race_list.push(vec![
+                    date.clone(),
+                    country_name.clone(),
+                    grand_prix_name.clone(),
+                    status.clone(),
+                    pos1_name.clone(),
+                    pos2_name.clone(),
+                    pos3_name.clone(),
+                ]);
+                /*
                 race_list.push((
                     date,
                     country_name,
@@ -395,16 +405,13 @@ pub fn get_race_schedule_info(
                     pos2_name,
                     pos3_name,
                 ));
+                */
             }
             Err(_) => continue,
         }
     }
 
-    if race_list.is_empty() {
-        return None;
-    }
-
-    Some(race_list)
+    race_list
 }
 
 pub fn is_next_race(race_id: i32) -> bool {

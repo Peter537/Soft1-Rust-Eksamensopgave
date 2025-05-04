@@ -156,7 +156,7 @@ pub fn get_own_team_standing() -> Option<(String, Vec<String>, i32)> {
     }
 }
 
-pub fn get_top_teams_standings(limit: Option<i32>) -> Option<Vec<(i32, String, i32)>> {
+pub fn get_top_teams_standings(limit: Option<i32>) -> Vec<Vec<String>> {
     // position, team, points
     let conn = get_connection().unwrap();
 
@@ -188,22 +188,18 @@ pub fn get_top_teams_standings(limit: Option<i32>) -> Option<Vec<(i32, String, i
         })
         .unwrap();
 
-    let mut standings: Vec<(i32, String, i32)> = Vec::new();
+    let mut standings: Vec<Vec<String>> = Vec::new();
     let mut position = 1;
 
     for row in rows {
         let (team_name, points) = row.unwrap();
-        standings.push((position, team_name, points));
+        standings.push(vec![position.to_string(), team_name, points.to_string()]);
         position += 1;
     }
 
     println!("Top teams standings: {:?}", standings);
 
-    if standings.is_empty() {
-        None
-    } else {
-        Some(standings)
-    }
+    standings
 }
 
 pub fn get_team_info(team_id: &i32) -> Option<Team> {

@@ -7,11 +7,3 @@ pub struct Circuit {
     pub lap_amount: i32,
     pub image_path: String,
 }
-
-pub struct CircuitInfo {
-    pub circuit_name: String,
-    pub location: String,
-    pub length_km: f64,
-    pub lap_amount: i32,
-    pub image_path: Option<String>,
-}

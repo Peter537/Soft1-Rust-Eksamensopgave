@@ -5,7 +5,7 @@ use crate::model::season::RaceInfo;
 use crate::ui::component::goto::goto_race;
 use crate::ui::component::table::make_table;
 use crate::util::image_loader::{get_car, get_team};
-use druid::widget::{CrossAxisAlignment, Flex, Label, MainAxisAlignment};
+use druid::widget::{CrossAxisAlignment, Flex, Label, MainAxisAlignment, Scroll, SizedBox};
 use druid::Widget;
 
 pub fn build_screen(team_id: &i32) -> impl Widget<AppState> {
@@ -46,14 +46,8 @@ pub fn build_screen(team_id: &i32) -> impl Widget<AppState> {
 
     left_column.add_child(Label::new("Results:").with_text_size(20.0));
     left_column.add_spacer(5.0);
-    let cols = vec![
-        "Race".to_string(),
-        "Date".to_string(),
-        "Positions".to_string(),
-        "Points".to_string(),
-    ];
 
-    let data: Vec<Vec<String>> = season_info
+    let team_results_data: Vec<Vec<String>> = season_info
         .races
         .iter()
         .map(|race_info: &RaceInfo| {
@@ -71,8 +65,22 @@ pub fn build_screen(team_id: &i32) -> impl Widget<AppState> {
         })
         .collect();
 
-    let results_table = make_table(cols, data, vec![(0, goto_race())]);
-    left_column.add_child(results_table);
+    left_column.add_child(
+        SizedBox::new(
+            Scroll::new(make_table(
+                vec![
+                    "Race".to_string(),
+                    "Date".to_string(),
+                    "Positions".to_string(),
+                    "Points".to_string(),
+                ],
+                team_results_data,
+                vec![(0, goto_race())],
+            ))
+            .vertical(),
+        )
+        .height(400.0),
+    );
 
     let mut right_column = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
     right_column.add_child(get_team(&team_info.image_path_logo));

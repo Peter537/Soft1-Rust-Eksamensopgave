@@ -8,7 +8,9 @@ use crate::ui::component::goto::{goto_driver, goto_team};
 use crate::ui::component::table::make_table;
 use crate::ui::{AppState, SET_CURRENT_DATE};
 use chrono::NaiveDate;
-use druid::widget::{Button, Controller, CrossAxisAlignment, Flex, Label, MainAxisAlignment};
+use druid::widget::{
+    Button, Controller, CrossAxisAlignment, Flex, Label, MainAxisAlignment, Scroll, SizedBox,
+};
 use druid::{Command, Env, LifeCycle, LifeCycleCtx, Target, Widget, WidgetExt};
 
 // Controller to set the current date when the widget is added
@@ -102,65 +104,8 @@ pub fn build_screen() -> impl Widget<AppState> {
     let mut column1 = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
     column1.add_child(Label::new("Race List").with_text_size(20.0));
     column1.add_spacer(5.0);
-    column1.add_child(race_list);
+    column1.add_child(SizedBox::new(Scroll::new(race_list).vertical()).height(500.0));
     column1.add_spacer(10.0);
-
-    // Column 2 - Top 3 drivers and teams standings
-    let mut column2 = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
-    column2.add_child(Label::new("Top 3 drivers standings").with_text_size(20.0));
-    column2.add_spacer(5.0);
-
-    let top_three_drivers = get_top_driver_standings(Some(3)).unwrap_or(vec![]);
-    let cols = vec![
-        "#".to_string(),
-        "Driver Name".to_string(),
-        "Points".to_string(),
-    ];
-
-    // make dommain for the table if empty
-    let mut data = vec![vec!["".to_string(); cols.len()]];
-
-    if !top_three_drivers.is_empty() {
-        data = top_three_drivers
-            .iter()
-            .map(|(n, driver_name, points)| {
-                vec![n.to_string(), driver_name.clone(), points.to_string()]
-            })
-            .collect();
-    }
-
-    let top_three_drivers = make_table(cols, data, vec![(1, goto_driver())]);
-
-    column2.add_child(top_three_drivers);
-    column2.add_spacer(10.0);
-
-    let top_three_teams = get_top_teams_standings(Some(3)).unwrap_or(vec![]);
-    let cols = vec![
-        "#".to_string(),
-        "Team Name".to_string(),
-        "Points".to_string(),
-    ];
-
-    let mut data: Vec<Vec<String>> = cols
-        .iter()
-        .map(|_| vec!["".to_string(); cols.len()])
-        .collect();
-
-    if !top_three_teams.is_empty() {
-        data = top_three_teams
-            .iter()
-            .map(|(n, team_name, points)| {
-                vec![n.to_string(), team_name.clone(), points.to_string()]
-            })
-            .collect();
-    }
-
-    let top_three_teams = make_table(cols, data, vec![(1, goto_team())]);
-
-    column2.add_child(Label::new("Top 3 team standings").with_text_size(20.0));
-    column2.add_spacer(5.0);
-    column2.add_child(top_three_teams);
-    //////////////////////////////
 
     // Column 3 - My team standings
     let (team_name, drivers, total_points) =
@@ -190,13 +135,45 @@ pub fn build_screen() -> impl Widget<AppState> {
         .border(druid::theme::BORDER_DARK, 1.0);
 
     column3.add_flex_child(col3_container, 1.0);
+    column3.add_spacer(10.0);
+
+    // Column 2 - Top 3 drivers and teams standings
+    //let mut column2 = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
+    column3.add_child(Label::new("Top 3 drivers standings").with_text_size(20.0));
+    column3.add_spacer(5.0);
+
+    let data = get_top_driver_standings(Some(3));
+    let cols = vec![
+        "#".to_string(),
+        "Driver Name".to_string(),
+        "Points".to_string(),
+    ];
+
+    let top_three_drivers = make_table(cols, data, vec![(1, goto_driver())]);
+
+    column3.add_child(top_three_drivers);
+    column3.add_spacer(10.0);
+
+    let data = get_top_teams_standings(Some(3));
+    let cols = vec![
+        "#".to_string(),
+        "Team Name".to_string(),
+        "Points".to_string(),
+    ];
+
+    let top_three_teams = make_table(cols, data, vec![(1, goto_team())]);
+
+    column3.add_child(Label::new("Top 3 team standings").with_text_size(20.0));
+    column3.add_spacer(5.0);
+    column3.add_child(top_three_teams);
+    //////////////////////////////
 
     let layout = Flex::row()
         .main_axis_alignment(MainAxisAlignment::SpaceAround)
         .cross_axis_alignment(CrossAxisAlignment::Start)
         .must_fill_main_axis(true)
         .with_flex_child(column1, 1.0)
-        .with_flex_child(column2, 1.0)
+        //.with_flex_child(column2, 1.0)
         .with_flex_child(column3, 1.0);
 
     Flex::column()

@@ -89,7 +89,7 @@ pub fn get_team_id_by_driver_id(driver_id: &i32) -> Option<i32> {
     }
 }
 
-pub fn get_top_driver_standings(limit: Option<i32>) -> Option<Vec<(i32, String, i32)>> {
+pub fn get_top_driver_standings(limit: Option<i32>) -> Vec<Vec<String>> {
     let conn = get_connection().unwrap();
 
     let base_query = r#"
@@ -97,7 +97,7 @@ pub fn get_top_driver_standings(limit: Option<i32>) -> Option<Vec<(i32, String, 
             d.first_name || ' ' || d.last_name AS driver_name,
             COALESCE(SUM(rdr.points), 0) AS total_points
         FROM drivers d
-        JOIN race_driver_results rdr ON d.id = rdr.fk_driver_id
+        LEFT JOIN race_driver_results rdr ON d.id = rdr.fk_driver_id
         GROUP BY d.id, d.first_name, d.last_name
         ORDER BY total_points DESC
     "#;
@@ -120,22 +120,18 @@ pub fn get_top_driver_standings(limit: Option<i32>) -> Option<Vec<(i32, String, 
         })
         .unwrap();
 
-    let mut standings: Vec<(i32, String, i32)> = Vec::new();
+    let mut standings: Vec<Vec<String>> = Vec::new();
     let mut position = 1;
 
     for row in rows {
         let (driver_name, points) = row.unwrap();
-        standings.push((position, driver_name, points));
+        standings.push(vec![position.to_string(), driver_name, points.to_string()]);
         position += 1;
     }
 
     println!("Top drivers standings: {:?}", standings);
 
-    if standings.is_empty() {
-        None
-    } else {
-        Some(standings)
-    }
+    standings
 }
 
 pub fn get_driver_id_by_fullname(full_name: &str) -> Option<i32> {

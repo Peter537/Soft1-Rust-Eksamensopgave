@@ -9,7 +9,9 @@ use crate::model::circuit::Circuit;
 use crate::ui::ViewSwitcher;
 use crate::util::image_loader::get_circuit;
 use chrono::Utc;
-use druid::widget::{Button, Container, CrossAxisAlignment, Flex, Label, MainAxisAlignment};
+use druid::widget::{
+    Button, Container, CrossAxisAlignment, Flex, Label, MainAxisAlignment, Scroll, SizedBox,
+};
 use druid::{Color, Env, Widget, WidgetExt};
 
 pub fn build_screen(race_id: i32) -> impl Widget<AppState> {
@@ -26,14 +28,6 @@ pub fn build_screen(race_id: i32) -> impl Widget<AppState> {
             if get_season_schedule_by_id(race_id).unwrap().status == "Finished" {
                 // ——— Build the results table ———
                 let results = get_race_results(&race_id);
-                let cols = vec![
-                    "Position".into(),
-                    "DriverNumber".into(),
-                    "DriverName".into(),
-                    "Team".into(),
-                    "Points".into(),
-                    "Total Time".into(),
-                ];
                 let rows: Vec<Vec<String>> = results
                     .into_iter()
                     .map(|r| {
@@ -47,16 +41,28 @@ pub fn build_screen(race_id: i32) -> impl Widget<AppState> {
                         ]
                     })
                     .collect();
-                let table = make_table(
-                    cols.clone(),
-                    rows,
-                    vec![(2, goto_driver()), (3, goto_team())],
-                );
                 Box::new(
                     Flex::column()
                         .with_child(Label::new("Race Results"))
                         .with_spacer(10.0)
-                        .with_child(table),
+                        .with_child(
+                            SizedBox::new(
+                                Scroll::new(make_table(
+                                    vec![
+                                        "Position".into(),
+                                        "DriverNumber".into(),
+                                        "DriverName".into(),
+                                        "Team".into(),
+                                        "Points".into(),
+                                        "Total Time".into(),
+                                    ],
+                                    rows,
+                                    vec![(2, goto_driver()), (3, goto_team())],
+                                ))
+                                .vertical(),
+                            )
+                            .height(500.0),
+                        ),
                 )
             } else if is_next_race(race_id) {
                 // ——— Re‑create the “Start Race” button fresh ———
