@@ -2,8 +2,8 @@ use crate::database::circuit::get_circuit_by_id;
 use crate::database::driver::get_all_drivers;
 use crate::database::driver::get_team_id_by_driver_id;
 use crate::database::race::{get_season_schedule_by_id, save_driver_results, update_race_status};
-use crate::model::lap::Lap;
-use crate::model::race_driver_result::RaceDriverResult;
+use crate::model::Lap;
+use crate::model::RaceDriverResult;
 use rand::Rng;
 
 pub fn start_race(season_schedule_id: i32) {
@@ -79,8 +79,6 @@ pub fn start_race(season_schedule_id: i32) {
         };
 
         let race_driver_result = RaceDriverResult {
-            id: 0,                       // Generate or fetch unique ID
-            season_schedule_id: race.id, // Assuming race.id exists
             driver_id: *driver_id,
             team_id: team_id,
             placement,
@@ -92,9 +90,7 @@ pub fn start_race(season_schedule_id: i32) {
         if let Some((_, lap_times)) = driver_laps.iter().find(|(id, _)| id == driver_id) {
             for (lap_number, lap_time) in lap_times.iter().enumerate() {
                 laps.push(Lap {
-                    id: 0,                                        // Generate or fetch unique ID
-                    race_driver_result_id: race_driver_result.id, // Will need to update after result is saved
-                    lap_time_ms: (*lap_time * 1000.0) as i32,     // Convert seconds to milliseconds
+                    lap_time_ms: (*lap_time * 1000.0) as i32, // Convert seconds to milliseconds
                     lap_number: (lap_number + 1) as i32,
                 });
             }

@@ -1,5 +1,4 @@
 pub struct Circuit {
-    pub id: i32,
     pub name: String,
     pub country_id: i32,
     pub city: String,

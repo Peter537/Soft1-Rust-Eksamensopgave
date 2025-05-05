@@ -4,10 +4,10 @@ use super::AppState;
 use super::Screen::RaceScreen;
 use crate::backend::race::start_race;
 use crate::database::circuit::get_circuit_by_id;
+use crate::database::country::get_country_image_path;
 use crate::database::race::{get_race_results, get_season_schedule_by_id, is_next_race};
-use crate::model::circuit::Circuit;
 use crate::ui::ViewSwitcher;
-use crate::util::image_loader::get_circuit;
+use crate::util::image_loader::{get_circuit, get_country};
 use chrono::Utc;
 use druid::widget::{
     Button, Container, CrossAxisAlignment, Flex, Label, MainAxisAlignment, Scroll, SizedBox,
@@ -16,7 +16,7 @@ use druid::{Color, Env, Widget, WidgetExt};
 
 pub fn build_screen(race_id: i32) -> impl Widget<AppState> {
     // Fetch circuit info
-    let (img, circuit_info) = circuit_info(&race_id);
+    let (circuit_image, circuit_country_image, circuit_info) = circuit_info(&race_id);
 
     // This ViewSwitcher watches `last_race_update_time`.
     // Whenever that String changes, it re‑runs the builder closure.
@@ -92,8 +92,8 @@ pub fn build_screen(race_id: i32) -> impl Widget<AppState> {
 
     // Column 2: Circuit information
     let mut column2 = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
-    column2.add_child(img);
-    column2.add_spacer(20.0);
+    column2.add_child(circuit_image);
+    column2.add_child(circuit_country_image);
     column2.add_child(circuit_info);
 
     // Main layout
@@ -111,28 +111,31 @@ pub fn build_screen(race_id: i32) -> impl Widget<AppState> {
         )
 }
 
-fn circuit_info(id: &i32) -> (impl Widget<AppState>, impl Widget<AppState>) {
-    let circuit_data: Circuit = get_circuit_by_id(*id).unwrap();
-    let img: String = circuit_data.image_path;
+fn circuit_info(
+    id: &i32,
+) -> (
+    impl Widget<AppState>,
+    impl Widget<AppState>,
+    impl Widget<AppState>,
+) {
+    let circuit_data = get_circuit_by_id(*id).unwrap();
+    let circuit_image = get_circuit(&circuit_data.image_path)
+        .fix_width(400.0)
+        .fix_height(300.0);
+    let circuit_country_image =
+        get_country(&get_country_image_path(circuit_data.country_id).unwrap());
 
     let circuit_info: Container<AppState> = Container::new(
         Flex::column()
             .with_child(Label::new(format!("Circuit: {}", circuit_data.name)))
-            .with_spacer(20.0)
             .with_child(Label::new(format!("Location: {}", circuit_data.city)))
-            .with_spacer(20.0)
             .with_child(Label::new(format!("Length: {} km", circuit_data.length_km)))
-            .with_spacer(20.0)
-            .with_child(Label::new(format!("Laps: {}", circuit_data.lap_amount)))
-            .with_spacer(20.0),
+            .with_child(Label::new(format!("Laps: {}", circuit_data.lap_amount))),
     )
     .padding(10.0)
     .border(Color::grey(0.5), 1.0);
 
-    (
-        get_circuit(&img).fix_width(400.0).fix_height(400.0),
-        circuit_info,
-    )
+    (circuit_image, circuit_country_image, circuit_info)
 }
 
 fn format_time(ms: i32) -> String {

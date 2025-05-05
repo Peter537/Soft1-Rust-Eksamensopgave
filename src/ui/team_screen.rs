@@ -1,7 +1,7 @@
 use super::AppState;
 use crate::database::teams::get_team_season_info;
 use crate::database::teams::{get_team_base_by_team_id, get_team_info};
-use crate::model::season::RaceInfo;
+use crate::model::RaceInfo;
 use crate::ui::component::goto::goto_race;
 use crate::ui::component::table::make_table;
 use crate::util::image_loader::{get_car, get_team};

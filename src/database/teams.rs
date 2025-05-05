@@ -1,6 +1,5 @@
-use crate::model::season::{RaceInfo, SeasonInfo};
-use crate::model::team::TeamBase;
-use crate::{database::connection::get_connection, model::team::Team};
+use crate::database::connection::get_connection;
+use crate::model::{RaceInfo, SeasonInfo, Team, TeamBase};
 use std::collections::HashMap;
 
 pub fn get_all_teams() -> Vec<(String, String, Vec<(String, String)>)> {
@@ -401,7 +400,6 @@ pub fn get_team_season_info(team_id: i32, season_year: i32) -> Option<SeasonInfo
     }
 
     Some(SeasonInfo {
-        season_year,
         total_points,
         overall_position,
         races,

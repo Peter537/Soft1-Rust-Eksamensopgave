@@ -1,7 +1,5 @@
 use crate::database::connection::get_connection;
-use crate::model::driver::Driver;
-use crate::model::driver_contract::DriverContract;
-use crate::model::season::{RaceInfo, SeasonInfo};
+use crate::model::{Driver, DriverContract, RaceInfo, SeasonInfo};
 use std::collections::HashMap;
 
 pub fn get_driver_by_id(id: &i32) -> Option<Driver> {
@@ -284,7 +282,6 @@ pub fn get_driver_season_info(driver_id: i32, season_year: i32) -> Option<Season
     }
 
     Some(SeasonInfo {
-        season_year,
         total_points,
         overall_position,
         races,
@@ -350,23 +347,17 @@ pub fn get_driver_contract(driver_id: &i32) -> Option<DriverContract> {
         .prepare(
             r#"
         SELECT 
-            id, fk_driver_id, fk_team_id, date_begin, date_end, monthly_wage
+            date_begin, date_end, monthly_wage
         FROM driver_contracts
         WHERE fk_driver_id = ?
         "#,
         )
         .unwrap();
     let row = stmt.query_row([driver_id], |row| {
-        let id: i32 = row.get(0)?;
-        let driver_id: i32 = row.get(1)?;
-        let team_id: i32 = row.get(2)?;
-        let date_begin: String = row.get(3)?;
-        let date_end: String = row.get(4)?;
-        let monthly_wage: f64 = row.get(5)?;
+        let date_begin: String = row.get(0)?;
+        let date_end: String = row.get(1)?;
+        let monthly_wage: f64 = row.get(2)?;
         Ok(DriverContract {
-            id,
-            driver_id,
-            team_id,
             date_begin,
             date_end,
             monthly_wage,

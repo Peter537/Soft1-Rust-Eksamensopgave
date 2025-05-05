@@ -1,28 +1,23 @@
 use crate::database::connection::get_connection;
-use crate::model::lap::Lap;
-use crate::model::race_driver_result::RaceDriverResult;
-use crate::model::race_driver_result::RaceResult;
-use crate::model::season_schedule::SeasonSchedule;
+use crate::model::{Lap, RaceDriverResult, RaceResult, SeasonSchedule};
 use rusqlite::named_params;
 use std::collections::HashMap;
 
 pub fn get_season_schedule_by_id(season_schedule_id: i32) -> Option<SeasonSchedule> {
     let conn = get_connection().unwrap();
-    let mut stmt = conn.prepare("SELECT id, fk_season_id, fk_circuit_id, date, status, grand_prix_name FROM season_schedules WHERE id = ?").unwrap();
+    let mut stmt = conn
+        .prepare("SELECT id, fk_circuit_id, date, status FROM season_schedules WHERE id = ?")
+        .unwrap();
     let row = stmt.query_row([season_schedule_id], |row| {
         let id = row.get(0)?;
-        let season_id = row.get(1)?;
-        let circuit_id = row.get(2)?;
-        let date = row.get(3)?;
-        let status = row.get(4)?;
-        let grand_prix_name = row.get(5)?;
+        let circuit_id = row.get(1)?;
+        let date = row.get(2)?;
+        let status = row.get(3)?;
         Ok(SeasonSchedule {
             id,
-            season_id,
             circuit_id,
             date,
             status,
-            grand_prix_name,
         })
     });
     match row {
@@ -129,23 +124,19 @@ pub fn get_next_race() -> Option<SeasonSchedule> {
     let conn = get_connection().unwrap();
     let mut stmt = conn
         .prepare(
-            "SELECT id, fk_season_id, fk_circuit_id, date, status, grand_prix_name FROM season_schedules WHERE status = 'Upcoming' ORDER BY date ASC LIMIT 1",
+            "SELECT id, fk_circuit_id, date, status FROM season_schedules WHERE status = 'Upcoming' ORDER BY date ASC LIMIT 1",
         )
         .unwrap();
     let row = stmt.query_row([], |row| {
         let id: i32 = row.get(0)?;
-        let season_id: i32 = row.get(1)?;
-        let circuit_id: i32 = row.get(2)?;
-        let date: String = row.get(3)?;
-        let status: String = row.get(4)?;
-        let grand_prix_name: String = row.get(5)?;
+        let circuit_id: i32 = row.get(1)?;
+        let date: String = row.get(2)?;
+        let status: String = row.get(3)?;
         Ok(SeasonSchedule {
             id,
-            season_id,
             circuit_id,
             date,
             status,
-            grand_prix_name,
         })
     });
     match row {

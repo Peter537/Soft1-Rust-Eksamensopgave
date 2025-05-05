@@ -1,8 +1,8 @@
 use super::component::goto::goto_race;
 use super::AppState;
-use crate::database::country::get_country_by_id;
+use crate::database::country::get_country_image_path;
 use crate::database::driver::{get_driver_by_id, get_driver_contract, get_driver_season_info};
-use crate::model::season::RaceInfo;
+use crate::model::RaceInfo;
 use crate::ui::component::table::make_table;
 use crate::util::image_loader::{get_country, get_driver};
 use druid::widget::{CrossAxisAlignment, Flex, Label, MainAxisAlignment, Scroll, SizedBox};
@@ -24,7 +24,7 @@ pub fn build_screen(driver_id: &i32) -> impl Widget<AppState> {
     let mut right_column = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
     right_column.add_child(get_driver(driver.image_path.as_str()));
     right_column.add_child(get_country(
-        &get_country_by_id(driver.country_id).unwrap().image_path,
+        &get_country_image_path(driver.country_id).unwrap(),
     ));
     right_column.add_spacer(10.0);
     right_column.add_child(Label::new(format!("Overall Rating:\t{}", driver.rating)));
