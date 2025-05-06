@@ -76,21 +76,7 @@ pub fn build_ui() -> impl druid::Widget<AppState> {
             }
 
             match screen {
-                Screen::Main => {
-                    Box::new(main_screen::build_screen())
-                    /*let main_content = Flex::column().with_child(main_screen::build_screen());
-
-                    ZStack::new(main_content)
-                        .with_child(
-                            build_modal(),
-                            Vec2::new(200.0, 200.0),
-                            Vec2::new(0.0, 0.0),
-                            UnitPoint::CENTER,
-                            Vec2::new(0.0, 0.0),
-                        )
-                        .boxed()
-                        */
-                }
+                Screen::Main => Box::new(main_screen::build_screen()),
                 Screen::TeamScreen { team_id } => {
                     Box::new(with_navbar(team_screen::build_screen(team_id)))
                 }
