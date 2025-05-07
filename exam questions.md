@@ -7,8 +7,6 @@ Ift. Result<>, så kan vi bruge det til når der kan ske fejl, ex. ved `/util/im
 
 Ift. Option<>, så kan vi bruge det i database-metoderne hvis nu der ikke er nogen data i databasen.
 
-Alle steder med `.expect()` skal vi fjerne og fejlhåndtere ordentligt.
-
 ---
 
 Der er 5 (ish) forskellige muligheder til at vi kan håndtere errors:
@@ -25,10 +23,9 @@ Ved at bruge `match` eller `if let`, kan vi have fuld kontrol over hvad der skal
 
 Der er 2 (muligvis flere) variationer af `unwrap`: `.unwrap_or()` / `.unwrap_or_else()`, disse giver os muligheden for at have en default værdi (fallback safety), hvis der sker en fejl. Det her er en mindre udgave af `match` og `if let`.
 
-`?` er en shorthand for `match`, som gør at vi kan skrive det på en mere kompakt måde. Det er dog kun muligt at bruge `?` hvis metoden returnerer en `Result` eller `Option`. Det er derfor ikke muligt at bruge det i alle situationer.
+`?` er en shorthand for `match`, som gør at vi kan skrive det på en mere kompakt måde. Det er dog kun muligt at bruge `?` hvis metoden returnerer en `Result`. Det er derfor ikke muligt at bruge det i alle situationer.
 
-
-Alle steder med `.expect()` skal vi fjerne og fejlhåndtere ordentligt.
+Alle steder vi bruge `.expect()` er unrecoverable errors (hvor man i et program med rigtige users ville have sendt brugeren tilbage til login skærmen og informeret dem om hvad der skete).
 
 ### 2. Ownership and Borrowing Concepts
 
