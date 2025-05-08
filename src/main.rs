@@ -8,7 +8,7 @@ mod ui;
 mod util;
 
 fn main() -> Result<(), PlatformError> {
-    util::appdata::create_files_if_not_exist();
+    let _ = util::appdata::create_files_if_not_exist();
 
     let main_window = WindowDesc::new(ui::build_ui()).title("Formula One Manager");
 
