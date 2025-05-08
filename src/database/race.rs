@@ -187,10 +187,10 @@ pub fn get_race_results(race_id: &i32) -> Vec<RaceResult> {
     results
 }
 
-pub fn get_race_list() -> Option<Vec<(String, String, String, String)>> {
+pub fn get_race_list() -> Vec<Vec<String>> {
     let conn = match get_connection() {
         Ok(conn) => conn,
-        Err(_) => return None, // Connection failed
+        Err(_) => return Vec::new(), // Connection failed
     };
 
     // Get the selected team from game_config
@@ -200,7 +200,7 @@ pub fn get_race_list() -> Option<Vec<(String, String, String, String)>> {
         |row| row.get(0),
     ) {
         Ok(id) => id,
-        Err(_) => return None, // No config or selected team
+        Err(_) => return Vec::new(), // No config or selected team
     };
 
     // Query to get all race details (including future races) and winner
@@ -218,7 +218,7 @@ pub fn get_race_list() -> Option<Vec<(String, String, String, String)>> {
         "#,
     ) {
         Ok(stmt) => stmt,
-        Err(_) => return None, // Query preparation failed
+        Err(_) => return Vec::new(), // Query preparation failed
     };
 
     let race_rows = match race_stmt.query_map([], |row| {
@@ -230,7 +230,7 @@ pub fn get_race_list() -> Option<Vec<(String, String, String, String)>> {
         ))
     }) {
         Ok(rows) => rows,
-        Err(_) => return None, // Query execution failed
+        Err(_) => return Vec::new(), // Query execution failed
     };
 
     // Query to get selected team's driver placements for completed races
@@ -246,7 +246,7 @@ pub fn get_race_list() -> Option<Vec<(String, String, String, String)>> {
         "#,
     ) {
         Ok(stmt) => stmt,
-        Err(_) => return None, // Query preparation failed
+        Err(_) => return Vec::new(), // Query preparation failed
     };
 
     let team_rows = match team_stmt.query_map([selected_team_id], |row| {
@@ -256,7 +256,7 @@ pub fn get_race_list() -> Option<Vec<(String, String, String, String)>> {
         ))
     }) {
         Ok(rows) => rows,
-        Err(_) => return None, // Query execution failed
+        Err(_) => return Vec::new(), // Query execution failed
     };
 
     // Aggregate race details with date
@@ -292,8 +292,8 @@ pub fn get_race_list() -> Option<Vec<(String, String, String, String)>> {
         }
     }
 
-    // Convert to Vec<(String, String, String, String)>
-    let mut race_list: Vec<(String, String, String, String)> = race_map
+    // Convert to Vec<Vec<String>>
+    let mut race_list: Vec<Vec<String>> = race_map
         .values()
         .map(|(date, grand_prix_name, winner_name, placements)| {
             let placements_str = if placements.is_empty() {
@@ -305,31 +305,20 @@ pub fn get_race_list() -> Option<Vec<(String, String, String, String)>> {
                     .collect::<Vec<String>>()
                     .join(", ")
             };
-            (
+            vec![
                 date.clone(),
                 grand_prix_name.clone(),
                 winner_name.clone(),
                 placements_str,
-            )
+            ]
         })
         .collect();
 
-    // Sort race list, placing races with "TBD" winner at the end
     race_list.sort_by(|a, b| {
-        if a.2 == "TBD" && b.2 != "TBD" {
-            std::cmp::Ordering::Greater
-        } else if a.2 != "TBD" && b.2 == "TBD" {
-            std::cmp::Ordering::Less
-        } else {
-            a.0.cmp(&b.0) // Sort by date
-        }
+        a[0].cmp(&b[0]) // Sort by date (first column)
     });
 
-    if race_list.is_empty() {
-        return None;
-    }
-
-    Some(race_list)
+    race_list
 }
 
 pub fn get_race_schedule_info() -> Vec<Vec<String>> {

@@ -35,22 +35,9 @@ impl<W: Widget<AppState>> Controller<AppState, W> for InitDateController {
 
 pub fn build_screen() -> impl Widget<AppState> {
     // Safely handle `get_next_race`
-    let next_race = match get_next_race() {
-        Some(race) => race,
-        None => {
-            eprintln!("Error: Failed to get next race.");
-            return Label::new("Error: Failed to load next race.").boxed();
-        }
-    };
-
+    let next_race = get_next_race().unwrap();
     // Safely parse the next race date
-    let next_race_day = match NaiveDate::parse_from_str(&next_race.date, "%Y-%m-%d") {
-        Ok(date) => date,
-        Err(err) => {
-            eprintln!("Error: Failed to parse next race date: {}", err);
-            return Label::new("Error: Failed to parse next race date.").boxed();
-        }
-    };
+    let next_race_day = NaiveDate::parse_from_str(&next_race.date, "%Y-%m-%d").unwrap();
 
     let new_action_button =
         Button::new("New Action").on_click(move |_ctx, _data: &mut AppState, _env| {
@@ -71,35 +58,16 @@ pub fn build_screen() -> impl Widget<AppState> {
             }
         });
 
-    let race_list = match get_race_list() {
-        Some(list) => list,
-        None => {
-            eprintln!("Error: Failed to get race list.");
-            return Label::new("Error: Failed to load race list.").boxed();
-        }
-    };
-
-    let cols = vec![
-        "Date".to_string(),
-        "Race".to_string(),
-        "Winner".to_string(),
-        "MyTeam Position".to_string(),
-    ];
-    let data = race_list
-        .iter()
-        .map(|race| {
-            let (date, grand_prix_name, winner_name, my_team_position) = race;
-
-            vec![
-                date.clone(),
-                grand_prix_name.clone(),
-                winner_name.clone(),
-                my_team_position.clone(),
-            ]
-        })
-        .collect::<Vec<Vec<String>>>();
-
-    let race_list = make_table(cols, data, vec![(1, goto_race()), (2, goto_driver())]);
+    let race_list = make_table(
+        vec![
+            "Date".to_string(),
+            "Race".to_string(),
+            "Winner".to_string(),
+            "MyTeam Position".to_string(),
+        ],
+        get_race_list(),
+        vec![(1, goto_race()), (2, goto_driver())],
+    );
 
     let mut column1 = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
     column1.add_child(Label::new("Race List").with_text_size(20.0));
