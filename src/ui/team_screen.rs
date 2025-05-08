@@ -9,26 +9,8 @@ use druid::widget::{CrossAxisAlignment, Flex, Label, MainAxisAlignment, Scroll, 
 use druid::Widget;
 
 pub fn build_screen(team_id: &i32) -> impl Widget<AppState> {
-    let team_info = match get_team_info(&team_id) {
-        Some(info) => info,
-        None => {
-            println!("Team not found!");
-            return Flex::column()
-                .with_child(Label::new("Team not found!"))
-                .with_spacer(20.0);
-        }
-    };
-
-    let team_base = match get_team_base_by_team_id(*team_id) {
-        Some(base) => base,
-        None => {
-            println!("Team base not found!");
-            return Flex::column()
-                .with_child(Label::new("Team base not found!"))
-                .with_spacer(20.0);
-        }
-    };
-
+    let team_info = get_team_info(&team_id).unwrap();
+    let team_base = get_team_base_by_team_id(*team_id).unwrap();
     let season_info = get_team_season_info(team_info.id, 2025).unwrap();
 
     let mut left_column = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
