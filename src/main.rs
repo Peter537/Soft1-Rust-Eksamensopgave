@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 use druid::{AppLauncher, PlatformError, WindowDesc};
 use ui::MyAppDelegate;
 
