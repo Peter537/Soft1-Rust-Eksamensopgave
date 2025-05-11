@@ -61,15 +61,16 @@ fn build_modal() -> impl Widget<AppState> {
                         set_game_number(career_id); // Update DB connection
                         if has_selected_team() == false {
                             println!("Career {} has no team selected", career_id);
-                            return;
+                            data.current_screen = ChooseTeam;
+                        } else {
+                            let selected_team = get_selected_team(&career_id.to_string()); // Load user's team
+                            data.selected_team = selected_team; // Load user's team
+                            data.current_screen = MainGameScreen; // Switch screen
                         }
 
-                        let selected_team = get_selected_team(&career_id.to_string()); // Load user's team
-                        data.selected_team = selected_team; // Load user's team
-                        data.current_screen = MainGameScreen; // Switch screen
                         data.show_modal = false; // Close modal
-                        ctx.request_update();
                         println!("Loaded Career {}", career_id);
+                        ctx.request_update();
                     },
                 ));
             }
