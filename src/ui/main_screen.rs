@@ -11,7 +11,6 @@ pub fn build_screen() -> impl Widget<AppState> {
     let create_new_career_button =
         Button::new("Create New Career").on_click(|_ctx, _data: &mut AppState, _env| {
             appdata::create_new_career(); // Call the function to create a new career
-
             _data.current_screen = ChooseTeam;
             _ctx.request_update();
             println!("New career created!");
@@ -57,27 +56,20 @@ fn build_modal() -> impl Widget<AppState> {
 
                 column = column.with_child(Button::new(label.clone()).on_click(
                     move |ctx, data: &mut AppState, _env| {
-                        match i32::try_from(career_id) {
-                            Ok(id) => {
-                                println!("Career ID: {}", career_id);
-                                data.game_number = career_id.to_string(); // Update game number in AppState
-                                set_game_number(id); // Update DB connection
-                                if has_selected_team() == false {
-                                    println!("Career {} has no team selected", career_id);
-                                    return;
-                                }
-
-                                let selected_team = get_selected_team(&career_id.to_string()); // Load user's team
-                                data.selected_team = selected_team; // Load user's team
-                                data.current_screen = MainGameScreen; // Switch screen
-                                data.show_modal = false; // Close modal
-                                ctx.request_update();
-                                println!("Loaded Career {}", career_id);
-                            }
-                            Err(_) => {
-                                println!("Failed to convert career_number {} to i32", career_id);
-                            }
+                        println!("Career ID: {}", career_id);
+                        data.game_number = career_id.to_string(); // Update game number in AppState
+                        set_game_number(career_id); // Update DB connection
+                        if has_selected_team() == false {
+                            println!("Career {} has no team selected", career_id);
+                            return;
                         }
+
+                        let selected_team = get_selected_team(&career_id.to_string()); // Load user's team
+                        data.selected_team = selected_team; // Load user's team
+                        data.current_screen = MainGameScreen; // Switch screen
+                        data.show_modal = false; // Close modal
+                        ctx.request_update();
+                        println!("Loaded Career {}", career_id);
                     },
                 ));
             }

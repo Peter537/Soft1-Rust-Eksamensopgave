@@ -159,7 +159,7 @@ pub fn create_files_if_not_exist() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-pub fn get_existing_careers() -> Vec<u32> {
+pub fn get_existing_careers() -> Vec<i32> {
     // Get the AppData/Roaming path
     let appdata = env::var("APPDATA").expect("APPDATA environment variable not found");
     let base_path = PathBuf::from(appdata).join("FormulaOneManager");
@@ -174,7 +174,7 @@ pub fn get_existing_careers() -> Vec<u32> {
                     if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
                         if file_name.starts_with("Career_") && file_name.ends_with(".db") {
                             let num_str = &file_name[7..file_name.len() - 3];
-                            if let Ok(num) = num_str.parse::<u32>() {
+                            if let Ok(num) = num_str.parse::<i32>() {
                                 existing.insert(num);
                             }
                         }
@@ -183,7 +183,7 @@ pub fn get_existing_careers() -> Vec<u32> {
             }
         }
     }
-    let mut sorted = existing.into_iter().collect::<Vec<u32>>();
+    let mut sorted = existing.into_iter().collect::<Vec<i32>>();
     sorted.sort();
     sorted
 }
