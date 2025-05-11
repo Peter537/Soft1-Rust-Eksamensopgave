@@ -9,17 +9,17 @@ use druid::{Color, UnitPoint, Vec2, Widget, WidgetExt};
 
 pub fn build_screen() -> impl Widget<AppState> {
     let create_new_career_button =
-        Button::new("Create New Career").on_click(|_ctx, _data: &mut AppState, _env| {
+        Button::new("Create New Career").on_click(|ctx, data: &mut AppState, _env| {
             appdata::create_new_career(); // Call the function to create a new career
-            _data.current_screen = ChooseTeam;
-            _ctx.request_update();
+            data.current_screen = ChooseTeam;
+            ctx.request_update();
             println!("New career created!");
         });
 
     let load_save_game_button =
-        Button::new("Load Saved Game").on_click(|_ctx, data: &mut AppState, _env| {
+        Button::new("Load Saved Game").on_click(|ctx, data: &mut AppState, _env| {
             data.show_modal = true;
-            _ctx.request_update();
+            ctx.request_update();
         });
 
     // Vertical layout for the widgets
