@@ -9,16 +9,7 @@ use druid::widget::{CrossAxisAlignment, Flex, Label, MainAxisAlignment, Scroll, 
 use druid::Widget;
 
 pub fn build_screen(driver_id: &i32) -> impl Widget<AppState> {
-    let driver = match get_driver_by_id(driver_id) {
-        Some(driver) => driver,
-        None => {
-            println!("Driver not found!");
-            return Flex::column()
-                .with_child(Label::new("Driver not found!"))
-                .with_spacer(20.0);
-        }
-    };
-
+    let driver = get_driver_by_id(driver_id).unwrap();
     let driver_contract = get_driver_contract(driver_id).unwrap();
 
     let mut right_column = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
