@@ -626,6 +626,7 @@ dependencies = [
  "druid",
  "image",
  "rand",
+ "rayon",
  "reqwest",
  "rusqlite",
  "winresource",
