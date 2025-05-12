@@ -1,5 +1,6 @@
 use crate::database::set_game_number;
 use crate::util::file::download_file;
+use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use std::collections::HashSet;
 use std::env;
 use std::fs;
@@ -10,15 +11,7 @@ const REPO: &str = "https://raw.githubusercontent.com/Peter537/Soft1-Rust-Eksame
 pub fn create_files_if_not_exist() -> Result<(), Box<dyn std::error::Error>> {
     let appdata = std::env::var("APPDATA").expect("APPDATA environment variable not found");
     let base_path = PathBuf::from(appdata).join("FormulaOneManager");
-
     let mod_default_path = base_path.join("Mod").join("Default");
-    fs::create_dir_all(&mod_default_path)?;
-
-    let default_database_path = mod_default_path.join("database.db");
-    if !default_database_path.exists() {
-        let url = REPO.to_owned() + "/mod/database.db";
-        download_file(url.as_str(), &default_database_path)?;
-    }
 
     let mod_image_paths = [
         (
@@ -138,6 +131,15 @@ pub fn create_files_if_not_exist() -> Result<(), Box<dyn std::error::Error>> {
         ),
     ];
 
+    fs::create_dir_all(&mod_default_path)?;
+
+    let mut downloads = Vec::new();
+
+    if !mod_default_path.join("database.db").exists() {
+        let url = format!("{}/mod/database.db", REPO);
+        downloads.push((url, mod_default_path.join("database.db")));
+    }
+
     for (dir, files) in mod_image_paths.iter() {
         let local_path = mod_default_path.join(dir);
         fs::create_dir_all(&local_path)?;
@@ -145,9 +147,32 @@ pub fn create_files_if_not_exist() -> Result<(), Box<dyn std::error::Error>> {
             let url = format!("{}/mod/{}/{}", REPO, dir, file);
             let dest = local_path.join(file);
             if !dest.exists() {
-                download_file(&url, &dest)?;
+                downloads.push((url, dest));
             }
         }
+    }
+
+    println!("Starting downloads...");
+    println!("Total files to download: {}", downloads.len());
+    let results: Vec<Result<(), Box<dyn std::error::Error + Send>>> = downloads
+        .into_par_iter()
+        .map(|(url, dest)| {
+            println!(
+                "Attempting to download from URL: {} to destination: {:?}",
+                url, dest
+            );
+            let result = download_file(&url, &dest);
+            if let Err(ref e) = result {
+                println!("Failed to download {}: {}", url, e);
+            }
+            result
+        })
+        .collect();
+
+    let errors: Vec<_> = results.into_iter().filter_map(Result::err).collect();
+    if !errors.is_empty() {
+        println!("Errors occurred during file downloads: {:?}", errors);
+        return Err(format!("Failed to download some files: {:?}", errors).into());
     }
 
     let game_saves_path = base_path.join("GameSaves");

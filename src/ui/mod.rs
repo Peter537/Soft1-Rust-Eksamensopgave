@@ -10,17 +10,19 @@ use druid::{
 
 pub const SET_CURRENT_DATE: Selector<String> = Selector::new("app.set-current-date");
 pub const RESET_GAME_STATE: Selector = Selector::new("app.reset-game-state");
+pub const SET_SCREEN: Selector<Screen> = Selector::new("app.set-screen");
+pub const SHOW_ERROR: Selector<String> = Selector::new("app.show-error");
 
 // Public submodules for screen-specific UI logic
 mod choose_team_screen;
-mod main_game_screen;
-mod main_screen;
-mod race_screen;
-
 mod driver_list_screen;
 mod driver_screen;
 mod leaderboard_screen;
+mod loading_screen;
+mod main_game_screen;
+mod main_screen;
 mod race_schedule_screen;
+mod race_screen;
 mod team_list_screen;
 mod team_screen;
 
@@ -38,6 +40,7 @@ pub struct AppState {
 
 #[derive(Clone, PartialEq, Eq, Data)]
 pub enum Screen {
+    Loading,
     Main,
     ChooseTeam,
     MainGameScreen,
@@ -53,7 +56,7 @@ pub enum Screen {
 impl Default for AppState {
     fn default() -> Self {
         AppState {
-            current_screen: Screen::Main,
+            current_screen: Screen::Loading,
             game_number: String::new(),
             selected_team: None,
             show_modal: false,
@@ -76,6 +79,7 @@ pub fn build_ui() -> impl druid::Widget<AppState> {
             }
 
             match screen {
+                Screen::Loading => Box::new(loading_screen::build_screen()),
                 Screen::Main => Box::new(main_screen::build_screen()),
                 Screen::TeamScreen { team_id } => {
                     Box::new(with_navbar(team_screen::build_screen(team_id)))
@@ -183,6 +187,13 @@ impl druid::AppDelegate<AppState> for MyAppDelegate {
             data.current_screen = Screen::Main;
             data.game_number.clear(); // Final clear
 
+            Handled::Yes
+        } else if let Some(new_screen) = cmd.get(SET_SCREEN) {
+            data.current_screen = new_screen.clone();
+            Handled::Yes
+        } else if let Some(error_msg) = cmd.get(SHOW_ERROR) {
+            println!("Error: {}", error_msg); // Replace with UI error display if desired
+            data.current_screen = Screen::Main; // Fallback to main screen
             Handled::Yes
         } else {
             Handled::No

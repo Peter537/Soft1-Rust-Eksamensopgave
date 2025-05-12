@@ -1,5 +1,6 @@
 #![windows_subsystem = "windows"]
 
+use crate::ui::AppState;
 use druid::{AppLauncher, PlatformError, WindowDesc};
 use ui::MyAppDelegate;
 
@@ -10,15 +11,12 @@ mod ui;
 mod util;
 
 fn main() -> Result<(), PlatformError> {
-    let _ = util::appdata::create_files_if_not_exist();
-
     let main_window = WindowDesc::new(ui::build_ui()).title("Formula One Manager");
-
-    let delegate = MyAppDelegate::new();
-
+    let app_state = AppState::default();
     AppLauncher::with_window(main_window)
-        .delegate(delegate)
-        .launch(ui::AppState::default())?;
+        .delegate(MyAppDelegate::new())
+        .launch(app_state)
+        .expect("Failed to launch application");
 
     Ok(())
 }
