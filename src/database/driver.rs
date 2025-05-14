@@ -4,72 +4,49 @@ use std::collections::HashMap;
 
 pub fn get_driver_by_id(id: &i32) -> Option<Driver> {
     let conn = get_connection().unwrap();
-    let mut stmt = conn
-        .prepare("SELECT d.id, d.first_name, d.last_name, d.rating, d.fk_country_id, d.date_of_birth, d.racing_number, d.image_driver
-                        FROM drivers d
-                        WHERE d.id = ?")
-        .unwrap();
-    let row = stmt
-        .query_row([id], |row| {
-            let id = row.get(0)?;
-            let first_name = row.get(1)?;
-            let last_name = row.get(2)?;
-            let rating = row.get(3)?;
-            let country_id = row.get(4)?;
-            let date_of_birth = row.get(5)?;
-            let racing_number = row.get(6)?;
-            let image_path = row.get(7)?;
-            Ok(Driver {
-                id,
-                first_name,
-                last_name,
-                rating,
-                country_id,
-                date_of_birth,
-                racing_number,
-                image_path,
-            })
+    let mut stmt = conn.prepare(
+        r#"SELECT id, first_name, last_name, rating, fk_country_id, date_of_birth, racing_number, image_driver
+           FROM drivers WHERE id = ?"#
+    ).unwrap();
+    let row = stmt.query_row([id], |row| {
+        Ok(Driver {
+            id: row.get(0)?,
+            first_name: row.get(1)?,
+            last_name: row.get(2)?,
+            rating: row.get(3)?,
+            country_id: row.get(4)?,
+            date_of_birth: row.get(5)?,
+            racing_number: row.get(6)?,
+            image_path: row.get(7)?,
         })
-        .unwrap();
-    Some(row)
+    });
+    match row {
+        Ok(driver) => Some(driver),
+        Err(_) => None,
+    }
 }
 
 pub fn get_all_drivers() -> Vec<Driver> {
     let conn = get_connection().unwrap();
-    let mut stmt = conn
-        .prepare("SELECT d.id, d.first_name, d.last_name, d.rating, d.fk_country_id, d.date_of_birth, d.racing_number, d.image_driver
-                        FROM drivers d")
-        .unwrap();
+    let mut stmt = conn.prepare(
+        r#"SELECT id, first_name, last_name, rating, fk_country_id, date_of_birth, racing_number, image_driver
+           FROM drivers"#
+    ).unwrap();
     let driver_iter = stmt
         .query_map([], |row| {
-            let id = row.get(0)?;
-            let first_name = row.get(1)?;
-            let last_name = row.get(2)?;
-            let rating = row.get(3)?;
-            let country_id = row.get(4)?;
-            let date_of_birth = row.get(5)?;
-            let racing_number = row.get(6)?;
-            let image_path = row.get(7)?;
             Ok(Driver {
-                id,
-                first_name,
-                last_name,
-                rating,
-                country_id,
-                date_of_birth,
-                racing_number,
-                image_path,
+                id: row.get(0)?,
+                first_name: row.get(1)?,
+                last_name: row.get(2)?,
+                rating: row.get(3)?,
+                country_id: row.get(4)?,
+                date_of_birth: row.get(5)?,
+                racing_number: row.get(6)?,
+                image_path: row.get(7)?,
             })
         })
         .unwrap();
-    let mut drivers = Vec::new();
-    for driver in driver_iter {
-        match driver {
-            Ok(driver) => drivers.push(driver),
-            Err(_) => continue,
-        }
-    }
-    drivers
+    driver_iter.filter_map(Result::ok).collect()
 }
 
 pub fn get_team_id_by_driver_id(driver_id: &i32) -> Option<i32> {
@@ -77,10 +54,7 @@ pub fn get_team_id_by_driver_id(driver_id: &i32) -> Option<i32> {
     let mut stmt = conn
         .prepare("SELECT fk_team_id FROM driver_contracts WHERE fk_driver_id = ?")
         .unwrap();
-    let row = stmt.query_row([driver_id], |row| {
-        let team_id = row.get(0)?;
-        Ok(team_id)
-    });
+    let row = stmt.query_row([driver_id], |row| row.get(0));
     match row {
         Ok(team_id) => Some(team_id),
         Err(_) => None,
@@ -89,7 +63,6 @@ pub fn get_team_id_by_driver_id(driver_id: &i32) -> Option<i32> {
 
 pub fn get_top_driver_standings(limit: Option<i32>) -> Vec<Vec<String>> {
     let conn = get_connection().unwrap();
-
     let base_query = r#"
         SELECT 
             d.first_name || ' ' || d.last_name AS driver_name,
@@ -99,51 +72,37 @@ pub fn get_top_driver_standings(limit: Option<i32>) -> Vec<Vec<String>> {
         GROUP BY d.id, d.first_name, d.last_name
         ORDER BY total_points DESC
     "#;
-
-    // Prepare query with optional LIMIT
     let final_query = match limit {
         Some(n) => format!("{} LIMIT {}", base_query, n),
         None => base_query.to_string(),
     };
-
     let mut stmt = conn.prepare(&final_query).unwrap();
-
-    // Unified query_map logic
     let rows = stmt
         .query_map([], |row| {
-            Ok((
-                row.get::<_, String>(0)?, // driver_name
-                row.get::<_, i32>(1)?,    // total_points
-            ))
+            Ok(vec![
+                row.get::<_, String>(0)?,          // driver_name
+                row.get::<_, i32>(1)?.to_string(), // total_points
+            ])
         })
         .unwrap();
-
-    let mut standings: Vec<Vec<String>> = Vec::new();
+    let mut standings = Vec::new();
     let mut position = 1;
-
     for row in rows {
-        let (driver_name, points) = row.unwrap();
-        standings.push(vec![position.to_string(), driver_name, points.to_string()]);
-        position += 1;
+        if let Ok(mut row_vec) = row {
+            row_vec.insert(0, position.to_string());
+            standings.push(row_vec);
+            position += 1;
+        }
     }
-
-    println!("Top drivers standings: {:?}", standings);
-
     standings
 }
 
 pub fn get_driver_id_by_fullname(full_name: &str) -> Option<i32> {
     let conn = get_connection().unwrap();
-
-    // select id from drivers where the full name is equal to full_name: &str
     let mut stmt = conn
         .prepare("SELECT id FROM drivers WHERE first_name || ' ' || last_name = ?")
         .unwrap();
-    let row = stmt.query_row([full_name], |row| {
-        let id = row.get(0)?;
-        Ok(id)
-    });
-
+    let row = stmt.query_row([full_name], |row| row.get(0));
     match row {
         Ok(id) => Some(id),
         Err(_) => None,
@@ -151,74 +110,51 @@ pub fn get_driver_id_by_fullname(full_name: &str) -> Option<i32> {
 }
 
 pub fn get_driver_season_info(driver_id: i32, season_year: i32) -> Option<SeasonInfo> {
-    // Establish a single connection
-    let conn = match get_connection() {
-        Ok(conn) => conn,
-        Err(_) => return None, // Connection failed
-    };
-
-    // Get season ID
-    let season_id: i32 = match conn.query_row(
-        "SELECT id FROM seasons WHERE year = ?1",
-        [season_year],
-        |row| row.get(0),
-    ) {
+    let conn = get_connection().unwrap();
+    let mut stmt = conn
+        .prepare("SELECT id FROM seasons WHERE year = ?")
+        .unwrap();
+    let season_id: i32 = match stmt.query_row([season_year], |row| row.get(0)) {
         Ok(id) => id,
-        Err(_) => return None, // Season not found
+        Err(_) => return None,
     };
-
-    // Query to get race details and driver results
-    let mut race_stmt = match conn.prepare(
-        r#"
-        SELECT 
+    let mut race_stmt = conn
+        .prepare(
+            r#"SELECT 
             ss.grand_prix_name,
             ss.date,
             rdr.placement,
             rdr.points
         FROM season_schedules ss
         JOIN race_driver_results rdr ON ss.id = rdr.fk_season_schedule_id
-        WHERE ss.fk_season_id = ?1 AND rdr.fk_driver_id = ?2
-        ORDER BY ss.date
-        "#,
-    ) {
-        Ok(stmt) => stmt,
-        Err(_) => return None, // Query preparation failed
-    };
-
+        WHERE ss.fk_season_id = ? AND rdr.fk_driver_id = ?
+        ORDER BY ss.date"#,
+        )
+        .unwrap();
     let race_rows = match race_stmt.query_map([season_id, driver_id], |row| {
         Ok((
-            row.get::<_, String>(0)?,      // grand_prix_name
-            row.get::<_, String>(1)?,      // date
-            row.get::<_, Option<i32>>(2)?, // placement (can be NULL if DNF)
-            row.get::<_, i32>(3)?,         // points
+            row.get::<_, String>(0)?,
+            row.get::<_, String>(1)?,
+            row.get::<_, Option<i32>>(2)?,
+            row.get::<_, i32>(3)?,
         ))
     }) {
         Ok(rows) => rows,
-        Err(_) => return None, // Query execution failed
+        Err(_) => return None,
     };
-
-    // Aggregate race results
-    let mut races: Vec<RaceInfo> = Vec::new();
+    let mut races = Vec::new();
     let mut race_map: HashMap<String, (String, Vec<i32>, i32)> = HashMap::new();
-
     for row in race_rows {
-        let (grand_prix_name, date, placement, points) = match row {
-            Ok(row) => row,
-            Err(_) => continue, // Skip invalid rows
-        };
-        let entry = race_map
-            .entry(grand_prix_name.clone())
-            .or_insert((date, Vec::new(), 0));
-
-        // Add placement if not NULL (exclude DNF or invalid placements)
-        if let Some(pos) = placement {
-            entry.1.push(pos);
+        if let Ok((grand_prix_name, date, placement, points)) = row {
+            let entry = race_map
+                .entry(grand_prix_name.clone())
+                .or_insert((date, Vec::new(), 0));
+            if let Some(pos) = placement {
+                entry.1.push(pos);
+            }
+            entry.2 += points;
         }
-        // Add points
-        entry.2 += points;
     }
-
-    // Convert HashMap to Vec<RaceInfo>
     for (grand_prix_name, (date, team_positions, race_points)) in race_map {
         races.push(RaceInfo {
             grand_prix_name,
@@ -227,60 +163,34 @@ pub fn get_driver_season_info(driver_id: i32, season_year: i32) -> Option<Season
             race_points,
         });
     }
-
-    // Sort races by date
     races.sort_by(|a, b| a.date.cmp(&b.date));
-
     let total_points: i32 = races.iter().map(|r| r.race_points).sum();
-
-    // Query to get total points for all drivers and calculate position
-    let mut driver_points_stmt = match conn.prepare(
-        r#"
-        SELECT rdr.fk_driver_id, SUM(rdr.points) as total_points
-        FROM race_driver_results rdr
-        JOIN season_schedules ss ON rdr.fk_season_schedule_id = ss.id
-        WHERE ss.fk_season_id = ?1
-        GROUP BY rdr.fk_driver_id
-        ORDER BY total_points DESC
-        "#,
-    ) {
-        Ok(stmt) => stmt,
-        Err(_) => return None, // Query preparation failed
-    };
-
+    let mut driver_points_stmt = conn
+        .prepare(
+            r#"SELECT rdr.fk_driver_id, SUM(rdr.points) as total_points
+           FROM race_driver_results rdr
+           JOIN season_schedules ss ON rdr.fk_season_schedule_id = ss.id
+           WHERE ss.fk_season_id = ?
+           GROUP BY rdr.fk_driver_id
+           ORDER BY total_points DESC"#,
+        )
+        .unwrap();
     let driver_points_rows = match driver_points_stmt.query_map([season_id], |row| {
-        Ok((row.get::<_, i32>(0)?, row.get::<_, i32>(1)?)) // (driver_id, total_points)
+        Ok((row.get::<_, i32>(0)?, row.get::<_, i32>(1)?))
     }) {
         Ok(rows) => rows,
-        Err(_) => return None, // Query execution failed
+        Err(_) => return None,
     };
-
-    let mut driver_points_list: Vec<(i32, i32)> = Vec::new();
-    for row in driver_points_rows {
-        match row {
-            Ok((did, points)) => driver_points_list.push((did, points)),
-            Err(_) => continue, // Skip invalid rows
-        }
-    }
-
-    // Calculate overall position
+    let driver_points_list: Vec<(i32, i32)> = driver_points_rows.filter_map(Result::ok).collect();
     let mut overall_position = 1;
-    let mut found_driver = false;
     for (did, points) in driver_points_list {
         if did == driver_id {
-            found_driver = true;
             break;
         }
         if points > total_points {
             overall_position += 1;
         }
     }
-
-    // If driver not found in results, return None
-    if !found_driver {
-        overall_position = 1; // TODO: Handle this case appropriately, maybe an Optional
-    }
-
     Some(SeasonInfo {
         total_points,
         overall_position,
@@ -288,14 +198,11 @@ pub fn get_driver_season_info(driver_id: i32, season_year: i32) -> Option<Season
     })
 }
 
-// Should be moved to the database module?
 pub fn get_driver_data() -> Vec<Vec<String>> {
     let conn = get_connection().unwrap();
-
     let mut stmt = conn
         .prepare(
-            r#"
-        SELECT 
+            r#"SELECT 
             d.first_name || ' ' || d.last_name AS driver_name,
             d.racing_number,
             d.rating,
@@ -305,66 +212,41 @@ pub fn get_driver_data() -> Vec<Vec<String>> {
         JOIN countries c ON d.fk_country_id = c.id
         LEFT JOIN driver_contracts dc ON dc.fk_driver_id = d.id
         LEFT JOIN teams t ON dc.fk_team_id = t.id
-        WHERE dc.date_end IS NULL OR dc.date_end > strftime('%s', 'now') * 1000
-        "#,
+        WHERE dc.date_end IS NULL OR dc.date_end > strftime('%s', 'now') * 1000"#,
         )
         .unwrap();
-
     let driver_iter = stmt
         .query_map([], |row| {
-            let driver_name: String = row.get(0)?;
-            let racing_number: i32 = row.get(1)?; // INTEGER in schema
-            let rating: i32 = row.get(2)?; // INTEGER in schema
-            let country: String = row.get(3)?;
-            let team: Option<String> = row.get(4)?; // Handle NULL teams
-
             Ok(vec![
-                driver_name,
-                racing_number.to_string(), // Convert i32 to String
-                rating.to_string(),        // Convert i32 to String
-                country,
-                team.unwrap_or_default(), // Use empty string for NULL
+                row.get::<_, String>(0)?,
+                row.get::<_, i32>(1)?.to_string(),
+                row.get::<_, i32>(2)?.to_string(),
+                row.get::<_, String>(3)?,
+                row.get::<_, Option<String>>(4)?.unwrap_or_default(),
             ])
         })
         .unwrap();
-
-    let mut data: Vec<Vec<String>> = Vec::new();
-    for driver in driver_iter {
-        match driver {
-            Ok(driver_data) => data.push(driver_data),
-            Err(_) => continue, // Skip rows with errors
-        }
-    }
-
-    println!("Driver data: {:?}", data); // Debug print
-
-    data
+    driver_iter.filter_map(Result::ok).collect()
 }
 
 pub fn get_driver_contract(driver_id: &i32) -> Option<DriverContract> {
     let conn = get_connection().unwrap();
     let mut stmt = conn
         .prepare(
-            r#"
-        SELECT 
-            date_begin, date_end, monthly_wage
-        FROM driver_contracts
-        WHERE fk_driver_id = ?
-        "#,
+            r#"SELECT date_begin, date_end, monthly_wage
+           FROM driver_contracts
+           WHERE fk_driver_id = ?"#,
         )
         .unwrap();
     let row = stmt.query_row([driver_id], |row| {
-        let date_begin: String = row.get(0)?;
-        let date_end: String = row.get(1)?;
-        let monthly_wage: f64 = row.get(2)?;
         Ok(DriverContract {
-            date_begin,
-            date_end,
-            monthly_wage,
+            date_begin: row.get(0)?,
+            date_end: row.get(1)?,
+            monthly_wage: row.get(2)?,
         })
     });
     match row {
-        Ok(driver_contract) => Some(driver_contract),
+        Ok(contract) => Some(contract),
         Err(_) => None,
     }
 }

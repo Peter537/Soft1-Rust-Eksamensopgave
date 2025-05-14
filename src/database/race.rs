@@ -9,19 +9,15 @@ pub fn get_season_schedule_by_id(season_schedule_id: i32) -> Option<SeasonSchedu
         .prepare("SELECT id, fk_circuit_id, date, status FROM season_schedules WHERE id = ?")
         .unwrap();
     let row = stmt.query_row([season_schedule_id], |row| {
-        let id = row.get(0)?;
-        let circuit_id = row.get(1)?;
-        let date = row.get(2)?;
-        let status = row.get(3)?;
         Ok(SeasonSchedule {
-            id,
-            circuit_id,
-            date,
-            status,
+            id: row.get(0)?,
+            circuit_id: row.get(1)?,
+            date: row.get(2)?,
+            status: row.get(3)?,
         })
     });
     match row {
-        Ok(season_schedule) => Some(season_schedule),
+        Ok(schedule) => Some(schedule),
         Err(_) => None,
     }
 }
@@ -31,10 +27,7 @@ pub fn get_race_id_by_grandprix_name(grand_prix_name: &str) -> Option<i32> {
     let mut stmt = conn
         .prepare("SELECT id FROM season_schedules WHERE grand_prix_name = ?")
         .unwrap();
-    let row = stmt.query_row([grand_prix_name], |row| {
-        let id: i32 = row.get(0)?;
-        Ok(id)
-    });
+    let row = stmt.query_row([grand_prix_name], |row| row.get(0));
     match row {
         Ok(id) => Some(id),
         Err(_) => None,
@@ -43,52 +36,33 @@ pub fn get_race_id_by_grandprix_name(grand_prix_name: &str) -> Option<i32> {
 
 pub fn update_race_status(season_schedule_id: i32, status: &str) {
     let conn = get_connection().unwrap();
-    let _ = conn.execute(
-        "UPDATE season_schedules SET status = :status WHERE id = :id",
-        named_params! {
-            ":status": status,
-            ":id": season_schedule_id,
-        },
-    );
+    let mut stmt = conn
+        .prepare("UPDATE season_schedules SET status = ? WHERE id = ?")
+        .unwrap();
+    stmt.execute([status, &season_schedule_id.to_string()])
+        .unwrap();
 }
 
 pub fn save_driver_results(
     season_schedule_id: i32,
     driver_results: Vec<(i32, (RaceDriverResult, Vec<Lap>))>,
 ) {
-    // Establish connection and start transaction
     let mut conn = get_connection().unwrap();
     let tx = conn.transaction().unwrap();
-
     {
-        // Prepare statement for race_driver_results
-        let mut stmt_race_driver_results = tx
-        .prepare(
-            "INSERT INTO race_driver_results (
-                fk_season_schedule_id,
-                fk_driver_id,
-                fk_team_id,
-                placement,
-                points,
-                status
-            ) VALUES (:fk_season_schedule_id, :fk_driver_id, :fk_team_id, :placement, :points, :status)"
-        )
-        .unwrap();
-
-        // Prepare statement for laps
+        let mut stmt_race_driver_results = tx.prepare(
+            r#"INSERT INTO race_driver_results (
+                fk_season_schedule_id, fk_driver_id, fk_team_id, placement, points, status
+            ) VALUES (:fk_season_schedule_id, :fk_driver_id, :fk_team_id, :placement, :points, :status)"#
+        ).unwrap();
         let mut stmt_laps = tx
             .prepare(
-                "INSERT INTO laps (
-                fk_race_driver_result_id,
-                lap_time_ms,
-                lap_number
-            ) VALUES (:fk_race_driver_result_id, :lap_time_ms, :lap_number)",
+                r#"INSERT INTO laps (
+                fk_race_driver_result_id, lap_time_ms, lap_number
+            ) VALUES (:fk_race_driver_result_id, :lap_time_ms, :lap_number)"#,
             )
             .unwrap();
-
-        // Process each driver
         for (_driver_id, (race_driver_result, laps)) in driver_results {
-            // Insert race_driver_results record
             stmt_race_driver_results
                 .execute(named_params! {
                     ":fk_season_schedule_id": season_schedule_id,
@@ -99,11 +73,7 @@ pub fn save_driver_results(
                     ":status": race_driver_result.status,
                 })
                 .unwrap();
-
-            // Get the generated ID
             let race_driver_result_id = tx.last_insert_rowid();
-
-            // Insert all laps for this driver
             for lap in laps {
                 stmt_laps
                     .execute(named_params! {
@@ -115,8 +85,6 @@ pub fn save_driver_results(
             }
         }
     }
-
-    // Commit the transaction
     tx.commit().unwrap();
 }
 
@@ -124,23 +92,22 @@ pub fn get_next_race() -> Option<SeasonSchedule> {
     let conn = get_connection().unwrap();
     let mut stmt = conn
         .prepare(
-            "SELECT id, fk_circuit_id, date, status FROM season_schedules WHERE status = 'Upcoming' ORDER BY date ASC LIMIT 1",
+            r#"SELECT id, fk_circuit_id, date, status
+           FROM season_schedules
+           WHERE status = 'Upcoming'
+           ORDER BY date ASC LIMIT 1"#,
         )
         .unwrap();
     let row = stmt.query_row([], |row| {
-        let id: i32 = row.get(0)?;
-        let circuit_id: i32 = row.get(1)?;
-        let date: String = row.get(2)?;
-        let status: String = row.get(3)?;
         Ok(SeasonSchedule {
-            id,
-            circuit_id,
-            date,
-            status,
+            id: row.get(0)?,
+            circuit_id: row.get(1)?,
+            date: row.get(2)?,
+            status: row.get(3)?,
         })
     });
     match row {
-        Ok(season_schedule) => Some(season_schedule),
+        Ok(schedule) => Some(schedule),
         Err(_) => None,
     }
 }
@@ -149,28 +116,24 @@ pub fn get_race_results(race_id: &i32) -> Vec<RaceResult> {
     let conn = get_connection().unwrap();
     let mut stmt = conn
         .prepare(
-            r#"
-            SELECT 
-                rdr.placement AS Position,
-                d.racing_number AS DriverNumber,
-                (d.first_name || ' ' || d.last_name) AS DriverName,
-                t.short_name AS Team,
-                rdr.points AS Points,
-                COALESCE(SUM(l.lap_time_ms), 0) AS TotalTime_ms
-                --0 AS TotalTime_ms
-            FROM race_driver_results rdr
-            JOIN drivers d ON rdr.fk_driver_id = d.id
-            JOIN teams t ON rdr.fk_team_id = t.id
-            LEFT JOIN laps l ON l.fk_race_driver_result_id = rdr.id
-            WHERE rdr.fk_season_schedule_id = ?
-            GROUP BY rdr.id, d.id, t.id
-            ORDER BY rdr.placement ASC
-            "#,
+            r#"SELECT 
+            rdr.placement AS Position,
+            d.racing_number AS DriverNumber,
+            (d.first_name || ' ' || d.last_name) AS DriverName,
+            t.short_name AS Team,
+            rdr.points AS Points,
+            COALESCE(SUM(l.lap_time_ms), 0) AS TotalTime_ms
+        FROM race_driver_results rdr
+        JOIN drivers d ON rdr.fk_driver_id = d.id
+        JOIN teams t ON rdr.fk_team_id = t.id
+        LEFT JOIN laps l ON l.fk_race_driver_result_id = rdr.id
+        WHERE rdr.fk_season_schedule_id = ?
+        GROUP BY rdr.id, d.id, t.id
+        ORDER BY rdr.placement ASC"#,
         )
         .unwrap();
-
-    let results: Vec<RaceResult> = stmt
-        .query_map(&[race_id], |row| {
+    let results = stmt
+        .query_map([race_id], |row| {
             Ok(RaceResult {
                 position: row.get(0)?,
                 driver_number: row.get(1)?,
@@ -180,33 +143,22 @@ pub fn get_race_results(race_id: &i32) -> Vec<RaceResult> {
                 total_time_ms: row.get(5)?,
             })
         })
-        .unwrap()
-        .filter_map(Result::ok)
-        .collect();
-
-    results
+        .unwrap();
+    results.filter_map(Result::ok).collect()
 }
 
 pub fn get_race_list() -> Vec<Vec<String>> {
-    let conn = match get_connection() {
-        Ok(conn) => conn,
-        Err(_) => return Vec::new(), // Connection failed
-    };
-
-    // Get the selected team from game_config
-    let selected_team_id: i32 = match conn.query_row(
-        "SELECT selected_team FROM game_config WHERE id = 1",
-        [],
-        |row| row.get(0),
-    ) {
+    let conn = get_connection().unwrap();
+    let mut stmt = conn
+        .prepare("SELECT selected_team FROM game_config WHERE id = 1")
+        .unwrap();
+    let selected_team_id: i32 = match stmt.query_row([], |row| row.get(0)) {
         Ok(id) => id,
-        Err(_) => return Vec::new(), // No config or selected team
+        Err(_) => return Vec::new(),
     };
-
-    // Query to get all race details (including future races) and winner
-    let mut race_stmt = match conn.prepare(
-        r#"
-        SELECT 
+    let mut race_stmt = conn
+        .prepare(
+            r#"SELECT 
             ss.date AS date,
             ss.id AS schedule_id,
             ss.grand_prix_name,
@@ -214,85 +166,62 @@ pub fn get_race_list() -> Vec<Vec<String>> {
         FROM season_schedules ss
         LEFT JOIN race_driver_results rdr ON ss.id = rdr.fk_season_schedule_id AND rdr.placement = 1
         LEFT JOIN drivers d ON rdr.fk_driver_id = d.id
-        ORDER BY ss.date
-        "#,
-    ) {
-        Ok(stmt) => stmt,
-        Err(_) => return Vec::new(), // Query preparation failed
-    };
-
+        ORDER BY ss.date"#,
+        )
+        .unwrap();
     let race_rows = match race_stmt.query_map([], |row| {
         Ok((
-            row.get::<_, String>(0)?,         // date
-            row.get::<_, i32>(1)?,            // schedule_id
-            row.get::<_, String>(2)?,         // grand_prix_name
-            row.get::<_, Option<String>>(3)?, // winner_name (NULL for future races)
+            row.get::<_, String>(0)?,
+            row.get::<_, i32>(1)?,
+            row.get::<_, String>(2)?,
+            row.get::<_, Option<String>>(3)?,
         ))
     }) {
         Ok(rows) => rows,
-        Err(_) => return Vec::new(), // Query execution failed
+        Err(_) => return Vec::new(),
     };
-
-    // Query to get selected team's driver placements for completed races
-    let mut team_stmt = match conn.prepare(
-        r#"
-        SELECT 
+    let mut team_stmt = conn
+        .prepare(
+            r#"SELECT 
             ss.id AS schedule_id,
             rdr.placement
         FROM season_schedules ss
         JOIN race_driver_results rdr ON ss.id = rdr.fk_season_schedule_id
-        WHERE rdr.fk_team_id = ?1
-        ORDER BY ss.date, rdr.placement
-        "#,
-    ) {
-        Ok(stmt) => stmt,
-        Err(_) => return Vec::new(), // Query preparation failed
-    };
-
+        WHERE rdr.fk_team_id = ?
+        ORDER BY ss.date, rdr.placement"#,
+        )
+        .unwrap();
     let team_rows = match team_stmt.query_map([selected_team_id], |row| {
-        Ok((
-            row.get::<_, i32>(0)?,         // schedule_id
-            row.get::<_, Option<i32>>(1)?, // placement
-        ))
+        Ok((row.get::<_, i32>(0)?, row.get::<_, Option<i32>>(1)?))
     }) {
         Ok(rows) => rows,
-        Err(_) => return Vec::new(), // Query execution failed
+        Err(_) => return Vec::new(),
     };
-
-    // Aggregate race details with date
     let mut race_map: HashMap<i32, (String, String, String, Vec<i32>)> = HashMap::new();
     for row in race_rows {
-        let (date, schedule_id, grand_prix_name, winner_name) = match row {
-            Ok(row) => row,
-            Err(_) => continue, // Skip invalid rows
-        };
-        race_map.insert(
-            schedule_id,
-            (
-                date,
-                grand_prix_name,
-                winner_name.unwrap_or("TBD".to_string()),
-                Vec::new(),
-            ),
-        );
+        if let Ok((date, schedule_id, grand_prix_name, winner_name)) = row {
+            race_map.insert(
+                schedule_id,
+                (
+                    date,
+                    grand_prix_name,
+                    winner_name.unwrap_or("TBD".to_string()),
+                    Vec::new(),
+                ),
+            );
+        }
     }
-
-    // Add team placements (up to two) for completed races
     for row in team_rows {
-        let (schedule_id, placement) = match row {
-            Ok(row) => row,
-            Err(_) => continue, // Skip invalid rows
-        };
-        if let Some(entry) = race_map.get_mut(&schedule_id) {
-            if let Some(pos) = placement {
-                if entry.3.len() < 2 {
-                    entry.3.push(pos);
+        if let Ok((schedule_id, placement)) = row {
+            if let Some(entry) = race_map.get_mut(&schedule_id) {
+                if let Some(pos) = placement {
+                    if entry.3.len() < 2 {
+                        entry.3.push(pos);
+                    }
                 }
             }
         }
     }
-
-    // Convert to Vec<Vec<String>>
     let mut race_list: Vec<Vec<String>> = race_map
         .values()
         .map(|(date, grand_prix_name, winner_name, placements)| {
@@ -313,20 +242,14 @@ pub fn get_race_list() -> Vec<Vec<String>> {
             ]
         })
         .collect();
-
-    race_list.sort_by(|a, b| {
-        a[0].cmp(&b[0]) // Sort by date (first column)
-    });
-
+    race_list.sort_by(|a, b| a[0].cmp(&b[0]));
     race_list
 }
 
 pub fn get_race_schedule_info() -> Vec<Vec<String>> {
     let conn = get_connection().unwrap();
-
     let mut stmt = conn.prepare(
-        r#"
-        SELECT 
+        r#"SELECT 
             ss.date,
             c.name AS country_name,
             ss.grand_prix_name,
@@ -343,13 +266,11 @@ pub fn get_race_schedule_info() -> Vec<Vec<String>> {
         LEFT JOIN drivers d2 ON rdr2.fk_driver_id = d2.id
         LEFT JOIN race_driver_results rdr3 ON ss.id = rdr3.fk_season_schedule_id AND rdr3.placement = 3
         LEFT JOIN drivers d3 ON rdr3.fk_driver_id = d3.id
-        ORDER BY CASE WHEN d1.first_name IS NOT NULL THEN 0 ELSE 1 END, ss.date
-        "#,
+        ORDER BY CASE WHEN d1.first_name IS NOT NULL THEN 0 ELSE 1 END, ss.date"#
     ).unwrap();
-
     let rows = stmt
         .query_map([], |row| {
-            Ok((
+            Ok(vec![
                 row.get::<_, String>(0)?,
                 row.get::<_, String>(1)?,
                 row.get::<_, String>(2)?,
@@ -357,41 +278,10 @@ pub fn get_race_schedule_info() -> Vec<Vec<String>> {
                 row.get::<_, String>(4)?,
                 row.get::<_, String>(5)?,
                 row.get::<_, String>(6)?,
-            ))
+            ])
         })
         .unwrap();
-
-    let mut race_list: Vec<Vec<String>> = Vec::new();
-    //let mut race_list: Vec<(String, String, String, String, String, String, String)> = Vec::new();
-    for row in rows {
-        match row {
-            Ok((date, country_name, grand_prix_name, status, pos1_name, pos2_name, pos3_name)) => {
-                race_list.push(vec![
-                    date.clone(),
-                    country_name.clone(),
-                    grand_prix_name.clone(),
-                    status.clone(),
-                    pos1_name.clone(),
-                    pos2_name.clone(),
-                    pos3_name.clone(),
-                ]);
-                /*
-                race_list.push((
-                    date,
-                    country_name,
-                    grand_prix_name,
-                    status,
-                    pos1_name,
-                    pos2_name,
-                    pos3_name,
-                ));
-                */
-            }
-            Err(_) => continue,
-        }
-    }
-
-    race_list
+    rows.filter_map(Result::ok).collect()
 }
 
 pub fn is_next_race(race_id: i32) -> bool {
@@ -399,7 +289,6 @@ pub fn is_next_race(race_id: i32) -> bool {
     let mut stmt = conn
         .prepare("SELECT MIN(id) FROM season_schedules WHERE status = 'Upcoming'")
         .unwrap();
-    let min_upcoming_id: Option<i32> = stmt.query_row([], |row| row.get(0)).unwrap();
-
+    let min_upcoming_id: Option<i32> = stmt.query_row([], |row| row.get(0)).ok();
     min_upcoming_id == Some(race_id)
 }
