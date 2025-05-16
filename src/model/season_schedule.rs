@@ -1,6 +1,6 @@
 pub struct SeasonSchedule {
-    pub id: i32,
-    pub circuit_id: i32,
+    pub id: u16,
+    pub circuit_id: u16,
     pub date: String,
     pub status: String,
 }

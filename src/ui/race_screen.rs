@@ -1,11 +1,11 @@
-use super::component::goto::{goto_driver, goto_team};
-use super::component::table::make_table;
 use super::AppState;
-use super::Screen::RaceScreen;
 use crate::backend::race::start_race;
 use crate::database::circuit::get_circuit_by_id;
 use crate::database::country::get_country_image_path;
 use crate::database::race::{get_race_results, get_season_schedule_by_id, is_next_race};
+use crate::ui::component::goto::{goto_driver, goto_team};
+use crate::ui::component::table::make_table;
+use crate::ui::Screen::RaceScreen;
 use crate::ui::ViewSwitcher;
 use crate::util::image_loader::{get_circuit, get_country};
 use crate::util::time::format_time;
@@ -15,9 +15,9 @@ use druid::widget::{
 };
 use druid::{Color, Env, Widget, WidgetExt};
 
-pub fn build_screen(race_id: i32) -> impl Widget<AppState> {
+pub fn build_screen(race_id: u16) -> impl Widget<AppState> {
     // Fetch circuit info
-    let (circuit_image, circuit_country_image, circuit_info) = circuit_info(&race_id);
+    let (circuit_image, circuit_country_image, circuit_info) = circuit_info(race_id);
 
     // This ViewSwitcher watches `last_race_update_time`.
     // Whenever that String changes, it re‑runs the builder closure.
@@ -26,7 +26,7 @@ pub fn build_screen(race_id: i32) -> impl Widget<AppState> {
         |data: &AppState, _env: &Env| data.last_race_update_time.clone(),
         // child_builder: rebuilds on every timestamp bump
         move |_key, _data: &AppState, _env| {
-            if get_season_schedule_by_id(race_id).unwrap().status == "Finished" {
+            if get_season_schedule_by_id(&race_id).unwrap().status == "Finished" {
                 // ——— Build the results table ———
                 let results = get_race_results(&race_id);
                 let rows: Vec<Vec<String>> = results
@@ -38,7 +38,7 @@ pub fn build_screen(race_id: i32) -> impl Widget<AppState> {
                             r.driver_name,
                             r.team,
                             r.points.to_string(),
-                            format_time(r.total_time_ms as i32),
+                            format_time(r.total_time_ms),
                         ]
                     })
                     .collect();
@@ -65,7 +65,7 @@ pub fn build_screen(race_id: i32) -> impl Widget<AppState> {
                             .height(500.0),
                         ),
                 )
-            } else if is_next_race(race_id) {
+            } else if is_next_race(&race_id) {
                 // ——— Re‑create the “Start Race” button fresh ———
                 let btn =
                     Button::new("Start Race").on_click(move |ctx, data: &mut AppState, _env| {
@@ -113,18 +113,18 @@ pub fn build_screen(race_id: i32) -> impl Widget<AppState> {
 }
 
 fn circuit_info(
-    id: &i32,
+    id: u16,
 ) -> (
     impl Widget<AppState>,
     impl Widget<AppState>,
     impl Widget<AppState>,
 ) {
-    let circuit_data = get_circuit_by_id(*id).unwrap();
+    let circuit_data = get_circuit_by_id(&id).unwrap();
     let circuit_image = get_circuit(&circuit_data.image_path)
         .fix_width(400.0)
         .fix_height(300.0);
     let circuit_country_image =
-        get_country(&get_country_image_path(circuit_data.country_id).unwrap());
+        get_country(&get_country_image_path(&circuit_data.country_id).unwrap());
 
     let circuit_info: Container<AppState> = Container::new(
         Flex::column()

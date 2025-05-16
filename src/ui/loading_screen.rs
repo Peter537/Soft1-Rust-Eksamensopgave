@@ -1,5 +1,5 @@
-use crate::ui::AppState;
-use crate::ui::Screen;
+use super::AppState;
+use crate::ui::Screen::Main;
 use crate::ui::{SET_SCREEN, SHOW_ERROR};
 use druid::widget::{Controller, Flex, Label, Spinner};
 use druid::{Env, LifeCycle, LifeCycleCtx, Target, Widget, WidgetExt};
@@ -28,7 +28,7 @@ impl<W: Widget<AppState>> Controller<AppState, W> for LoadingController {
             let sink = ctx.get_external_handle();
             thread::spawn(
                 move || match crate::util::appdata::create_files_if_not_exist() {
-                    Ok(_) => sink.submit_command(SET_SCREEN, Screen::Main, Target::Auto),
+                    Ok(_) => sink.submit_command(SET_SCREEN, Main, Target::Auto),
                     Err(e) => sink.submit_command(
                         SHOW_ERROR,
                         format!("Failed to create files: {}", e),

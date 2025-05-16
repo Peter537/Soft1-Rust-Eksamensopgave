@@ -1,10 +1,10 @@
 pub struct Driver {
-    pub id: i32,
+    pub id: u16,
     pub first_name: String,
     pub last_name: String,
-    pub rating: i32,
-    pub country_id: i32,
+    pub rating: u8,
+    pub country_id: u8,
     pub date_of_birth: String,
-    pub racing_number: i32,
+    pub racing_number: u8,
     pub image_path: String,
 }

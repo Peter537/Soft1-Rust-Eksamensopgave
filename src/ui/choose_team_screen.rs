@@ -1,6 +1,6 @@
 use super::AppState;
-use super::Screen::MainGameScreen;
 use crate::database::teams::{get_all_teams, save_selected_team};
+use crate::ui::Screen::MainGameScreen;
 use druid::widget::{Button, CrossAxisAlignment, Flex, Label, MainAxisAlignment, Scroll};
 use druid::{Env, Widget, WidgetExt};
 

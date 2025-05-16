@@ -1,6 +1,6 @@
-use super::component::goto::{goto_driver, goto_race};
 use super::AppState;
 use crate::database::race::get_race_schedule_info;
+use crate::ui::component::goto::{goto_driver, goto_race};
 use crate::ui::component::table::make_table;
 use druid::widget::{Flex, Scroll, SizedBox};
 use druid::Widget;

@@ -1,18 +1,14 @@
 use super::super::ui::AppState;
+use crate::util::appdata::get_mod_default_path;
 use druid::piet::ImageFormat;
 use druid::widget::{Image, Label};
 use druid::{Color, ImageBuf, Widget, WidgetExt};
 use image::load_from_memory;
-use std::env;
 use std::fs;
 use std::path::PathBuf;
 
 fn get_image_at(path: PathBuf) -> Box<dyn Widget<AppState>> {
-    let appdata = env::var("APPDATA").expect("APPDATA environment variable not found");
-    let base_path = PathBuf::from(appdata).join("FormulaOneManager");
-    let mod_default_path = base_path.join("Mod").join("Default");
-
-    let image_path = mod_default_path.join(path);
+    let image_path = get_mod_default_path().join(path);
     if image_path.exists() {
         let image_bytes = fs::read(image_path).expect("Failed to read image file");
 

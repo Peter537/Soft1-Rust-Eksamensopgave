@@ -1,11 +1,11 @@
 use super::component::goto::goto_race;
-use super::Screen::RaceScreen;
 use crate::database::config::{get_current_date, update_current_date};
 use crate::database::driver::get_top_driver_standings;
 use crate::database::race::{get_next_race, get_race_list};
 use crate::database::teams::{get_own_team_standing, get_top_teams_standings};
 use crate::ui::component::goto::{goto_driver, goto_team};
 use crate::ui::component::table::make_table;
+use crate::ui::Screen::RaceScreen;
 use crate::ui::{AppState, SET_CURRENT_DATE};
 use chrono::NaiveDate;
 use druid::widget::{
@@ -58,41 +58,45 @@ pub fn build_screen() -> impl Widget<AppState> {
             }
         });
 
-    let race_list = make_table(
-        vec![
-            "Date".to_string(),
-            "Race".to_string(),
-            "Winner".to_string(),
-            "MyTeam Position".to_string(),
-        ],
-        get_race_list(),
-        vec![(1, goto_race()), (2, goto_driver())],
-    );
-
     let mut column1 = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
     column1.add_child(Label::new("Race List").with_text_size(20.0));
     column1.add_spacer(5.0);
-    column1.add_child(SizedBox::new(Scroll::new(race_list).vertical()).height(500.0));
+    column1.add_child(
+        SizedBox::new(
+            Scroll::new(make_table(
+                vec![
+                    "Date".to_string(),
+                    "Race".to_string(),
+                    "Winner".to_string(),
+                    "MyTeam Position".to_string(),
+                ],
+                get_race_list(),
+                vec![(1, goto_race()), (2, goto_driver())],
+            ))
+            .vertical(),
+        )
+        .height(500.0),
+    );
     column1.add_spacer(10.0);
 
-    // Column 3 - My team standings
+    // Column 2 - My team standings & short Leaderboards
     let (team_name, drivers, total_points) =
         get_own_team_standing().unwrap_or(("".to_string(), vec![], 0));
 
-    let mut column3 = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
+    let mut column2 = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
 
-    column3.add_child(Label::new(|data: &AppState, _env: &_| {
+    column2.add_child(Label::new(|data: &AppState, _env: &_| {
         format!("Current Date: {}", data.current_date)
     }));
-    column3.add_child(Label::new(
+    column2.add_child(Label::new(
         "Next Race Date: ".to_owned() + &next_race_day.to_string(),
     ));
-    column3.add_child(new_action_button);
+    column2.add_child(new_action_button);
 
-    column3.add_spacer(10.0);
-    column3.add_child(Label::new("My Team").with_text_size(20.0));
+    column2.add_spacer(10.0);
+    column2.add_child(Label::new("My Team").with_text_size(20.0));
 
-    let col3_container = Flex::column()
+    let col2_container = Flex::column()
         .main_axis_alignment(MainAxisAlignment::Start)
         .cross_axis_alignment(CrossAxisAlignment::Start)
         .with_child(Label::new(format!("Team: {}", team_name)).with_text_size(16.0))
@@ -102,38 +106,33 @@ pub fn build_screen() -> impl Widget<AppState> {
         .with_child(Label::new(format!("Total Points: {}", total_points)).with_text_size(16.0))
         .border(druid::theme::BORDER_DARK, 1.0);
 
-    column3.add_flex_child(col3_container, 1.0);
-    column3.add_spacer(10.0);
+    column2.add_flex_child(col2_container, 1.0);
+    column2.add_spacer(10.0);
 
-    // Column 2 - Top 3 drivers and teams standings
-    //let mut column2 = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
-    column3.add_child(Label::new("Top 3 drivers standings").with_text_size(20.0));
-    column3.add_spacer(5.0);
+    column2.add_child(Label::new("Top 3 drivers standings").with_text_size(20.0));
+    column2.add_spacer(5.0);
+    column2.add_child(make_table(
+        vec![
+            "#".to_string(),
+            "Driver Name".to_string(),
+            "Points".to_string(),
+        ],
+        get_top_driver_standings(Some(3)),
+        vec![(1, goto_driver())],
+    ));
+    column2.add_spacer(10.0);
 
-    let data = get_top_driver_standings(Some(3));
-    let cols = vec![
-        "#".to_string(),
-        "Driver Name".to_string(),
-        "Points".to_string(),
-    ];
-
-    let top_three_drivers = make_table(cols, data, vec![(1, goto_driver())]);
-
-    column3.add_child(top_three_drivers);
-    column3.add_spacer(10.0);
-
-    let data = get_top_teams_standings(Some(3));
-    let cols = vec![
-        "#".to_string(),
-        "Team Name".to_string(),
-        "Points".to_string(),
-    ];
-
-    let top_three_teams = make_table(cols, data, vec![(1, goto_team())]);
-
-    column3.add_child(Label::new("Top 3 team standings").with_text_size(20.0));
-    column3.add_spacer(5.0);
-    column3.add_child(top_three_teams);
+    column2.add_child(Label::new("Top 3 team standings").with_text_size(20.0));
+    column2.add_spacer(5.0);
+    column2.add_child(make_table(
+        vec![
+            "#".to_string(),
+            "Team Name".to_string(),
+            "Points".to_string(),
+        ],
+        get_top_teams_standings(Some(3)),
+        vec![(1, goto_team())],
+    ));
     //////////////////////////////
 
     let layout = Flex::row()
@@ -141,8 +140,7 @@ pub fn build_screen() -> impl Widget<AppState> {
         .cross_axis_alignment(CrossAxisAlignment::Start)
         .must_fill_main_axis(true)
         .with_flex_child(column1, 1.0)
-        //.with_flex_child(column2, 1.0)
-        .with_flex_child(column3, 1.0);
+        .with_flex_child(column2, 1.0);
 
     Flex::column()
         .cross_axis_alignment(CrossAxisAlignment::Center)

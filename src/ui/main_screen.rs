@@ -1,8 +1,8 @@
 use super::AppState;
-use super::Screen::{ChooseTeam, MainGameScreen};
 use crate::database::config::has_selected_team;
 use crate::database::set_game_number;
 use crate::database::teams::get_selected_team;
+use crate::ui::Screen::{ChooseTeam, MainGameScreen};
 use crate::util::appdata;
 use druid::widget::{Button, Container, Either, Flex, Label, ZStack};
 use druid::{Color, UnitPoint, Vec2, Widget, WidgetExt};

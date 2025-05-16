@@ -2,7 +2,7 @@ use crate::database::connection::get_connection;
 use crate::model::{Driver, DriverContract, RaceInfo, SeasonInfo};
 use std::collections::HashMap;
 
-pub fn get_driver_by_id(id: &i32) -> Option<Driver> {
+pub fn get_driver_by_id(id: &u16) -> Option<Driver> {
     let conn = get_connection().unwrap();
     let mut stmt = conn.prepare(
         r#"SELECT id, first_name, last_name, rating, fk_country_id, date_of_birth, racing_number, image_driver
@@ -49,7 +49,7 @@ pub fn get_all_drivers() -> Vec<Driver> {
     driver_iter.filter_map(Result::ok).collect()
 }
 
-pub fn get_team_id_by_driver_id(driver_id: &i32) -> Option<i32> {
+pub fn get_team_id_by_driver_id(driver_id: &u16) -> Option<u16> {
     let conn = get_connection().unwrap();
     let mut stmt = conn
         .prepare("SELECT fk_team_id FROM driver_contracts WHERE fk_driver_id = ?")
@@ -61,7 +61,7 @@ pub fn get_team_id_by_driver_id(driver_id: &i32) -> Option<i32> {
     }
 }
 
-pub fn get_top_driver_standings(limit: Option<i32>) -> Vec<Vec<String>> {
+pub fn get_top_driver_standings(limit: Option<u8>) -> Vec<Vec<String>> {
     let conn = get_connection().unwrap();
     let base_query = r#"
         SELECT 
@@ -97,7 +97,7 @@ pub fn get_top_driver_standings(limit: Option<i32>) -> Vec<Vec<String>> {
     standings
 }
 
-pub fn get_driver_id_by_fullname(full_name: &str) -> Option<i32> {
+pub fn get_driver_id_by_fullname(full_name: &str) -> Option<u16> {
     let conn = get_connection().unwrap();
     let mut stmt = conn
         .prepare("SELECT id FROM drivers WHERE first_name || ' ' || last_name = ?")
@@ -109,12 +109,12 @@ pub fn get_driver_id_by_fullname(full_name: &str) -> Option<i32> {
     }
 }
 
-pub fn get_driver_season_info(driver_id: i32, season_year: i32) -> Option<SeasonInfo> {
+pub fn get_driver_season_info(driver_id: &u16, season_year: &u16) -> Option<SeasonInfo> {
     let conn = get_connection().unwrap();
     let mut stmt = conn
         .prepare("SELECT id FROM seasons WHERE year = ?")
         .unwrap();
-    let season_id: i32 = match stmt.query_row([season_year], |row| row.get(0)) {
+    let season_id = match stmt.query_row([season_year], |row| row.get(0)) {
         Ok(id) => id,
         Err(_) => return None,
     };
@@ -131,19 +131,19 @@ pub fn get_driver_season_info(driver_id: i32, season_year: i32) -> Option<Season
         ORDER BY ss.date"#,
         )
         .unwrap();
-    let race_rows = match race_stmt.query_map([season_id, driver_id], |row| {
+    let race_rows = match race_stmt.query_map([season_id, *driver_id], |row| {
         Ok((
             row.get::<_, String>(0)?,
             row.get::<_, String>(1)?,
-            row.get::<_, Option<i32>>(2)?,
-            row.get::<_, i32>(3)?,
+            row.get::<_, Option<u8>>(2)?,
+            row.get::<_, u16>(3)?,
         ))
     }) {
         Ok(rows) => rows,
         Err(_) => return None,
     };
     let mut races = Vec::new();
-    let mut race_map: HashMap<String, (String, Vec<i32>, i32)> = HashMap::new();
+    let mut race_map: HashMap<String, (String, Vec<u8>, u16)> = HashMap::new();
     for row in race_rows {
         if let Ok((grand_prix_name, date, placement, points)) = row {
             let entry = race_map
@@ -164,7 +164,7 @@ pub fn get_driver_season_info(driver_id: i32, season_year: i32) -> Option<Season
         });
     }
     races.sort_by(|a, b| a.date.cmp(&b.date));
-    let total_points: i32 = races.iter().map(|r| r.race_points).sum();
+    let total_points: u16 = races.iter().map(|r| r.race_points).sum();
     let mut driver_points_stmt = conn
         .prepare(
             r#"SELECT rdr.fk_driver_id, SUM(rdr.points) as total_points
@@ -176,15 +176,15 @@ pub fn get_driver_season_info(driver_id: i32, season_year: i32) -> Option<Season
         )
         .unwrap();
     let driver_points_rows = match driver_points_stmt.query_map([season_id], |row| {
-        Ok((row.get::<_, i32>(0)?, row.get::<_, i32>(1)?))
+        Ok((row.get::<_, u16>(0)?, row.get::<_, u16>(1)?))
     }) {
         Ok(rows) => rows,
         Err(_) => return None,
     };
-    let driver_points_list: Vec<(i32, i32)> = driver_points_rows.filter_map(Result::ok).collect();
+    let driver_points_list: Vec<(u16, u16)> = driver_points_rows.filter_map(Result::ok).collect();
     let mut overall_position = 1;
     for (did, points) in driver_points_list {
-        if did == driver_id {
+        if did == *driver_id {
             break;
         }
         if points > total_points {
@@ -229,7 +229,7 @@ pub fn get_driver_data() -> Vec<Vec<String>> {
     driver_iter.filter_map(Result::ok).collect()
 }
 
-pub fn get_driver_contract(driver_id: &i32) -> Option<DriverContract> {
+pub fn get_driver_contract(driver_id: &u16) -> Option<DriverContract> {
     let conn = get_connection().unwrap();
     let mut stmt = conn
         .prepare(

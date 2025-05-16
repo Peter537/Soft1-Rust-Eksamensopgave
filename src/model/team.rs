@@ -1,8 +1,8 @@
 pub struct Team {
-    pub id: i32,
+    pub id: u16,
     pub short_name: String,
     pub full_name: String,
-    pub first_entry: i32,
+    pub first_entry: u16,
     pub team_chief: String,
     pub chassis: String,
     pub power_unit: String,

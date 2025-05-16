@@ -1,6 +1,6 @@
 use crate::database::connection::get_connection;
 
-pub fn get_country_image_path(country_id: i32) -> Option<String> {
+pub fn get_country_image_path(country_id: &u8) -> Option<String> {
     let conn = get_connection().unwrap();
     let mut stmt = conn
         .prepare("SELECT image_country FROM countries WHERE id = ?")

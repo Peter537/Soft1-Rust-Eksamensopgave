@@ -1,6 +1,6 @@
-use super::{component::goto::goto_team_fullname, AppState};
+use super::AppState;
 use crate::database::teams::get_team_data;
-use crate::ui::component::goto::{goto_driver, goto_team};
+use crate::ui::component::goto::{goto_driver, goto_team, goto_team_fullname};
 use crate::ui::component::table::make_table;
 use druid::widget::{Flex, Scroll, SizedBox};
 use druid::Widget;

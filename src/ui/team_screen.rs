@@ -1,6 +1,5 @@
 use super::AppState;
-use crate::database::teams::get_team_season_info;
-use crate::database::teams::{get_team_base_by_team_id, get_team_info};
+use crate::database::teams::{get_team_base_by_team_id, get_team_info, get_team_season_info};
 use crate::model::RaceInfo;
 use crate::ui::component::goto::goto_race;
 use crate::ui::component::table::make_table;
@@ -8,10 +7,10 @@ use crate::util::image_loader::{get_car, get_team};
 use druid::widget::{CrossAxisAlignment, Flex, Label, MainAxisAlignment, Scroll, SizedBox};
 use druid::Widget;
 
-pub fn build_screen(team_id: &i32) -> impl Widget<AppState> {
+pub fn build_screen(team_id: &u16) -> impl Widget<AppState> {
     let team_info = get_team_info(&team_id).unwrap();
-    let team_base = get_team_base_by_team_id(*team_id).unwrap();
-    let season_info = get_team_season_info(team_info.id, 2025).unwrap();
+    let team_base = get_team_base_by_team_id(&team_id).unwrap();
+    let season_info = get_team_season_info(&team_info.id, &2025).unwrap();
 
     let mut left_column = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
     left_column.add_child(Label::new("Season Info:").with_text_size(20.0));

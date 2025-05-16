@@ -1,5 +1,5 @@
-pub fn format_time(ms: i32) -> String {
-    // return in format "H:MM:SS.mmm" for hours < 10, "HH:MM:SS.mmm" for hours >= 10
+/// return in format "H:MM:SS.mmm" for hours < 10, "HH:MM:SS.mmm" for hours >= 10
+pub fn format_time(ms: u32) -> String {
     let seconds = ms / 1000;
     let milliseconds = ms % 1000;
     let minutes = seconds / 60;

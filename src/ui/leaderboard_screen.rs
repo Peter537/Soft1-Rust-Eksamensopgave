@@ -1,8 +1,8 @@
-use super::component::table::make_table;
 use super::AppState;
 use crate::database::driver::get_top_driver_standings;
 use crate::database::teams::get_top_teams_standings;
 use crate::ui::component::goto::{goto_driver, goto_team};
+use crate::ui::component::table::make_table;
 use druid::widget::{CrossAxisAlignment, Flex, Label, MainAxisAlignment, Scroll, SizedBox};
 use druid::Widget;
 

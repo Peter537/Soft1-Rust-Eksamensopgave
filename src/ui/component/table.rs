@@ -1,4 +1,4 @@
-use crate::ui::AppState;
+use super::super::AppState;
 use druid::widget::{Container, Controller, Flex, Label};
 use druid::{Color, Env, Event, EventCtx, Widget, WidgetExt};
 

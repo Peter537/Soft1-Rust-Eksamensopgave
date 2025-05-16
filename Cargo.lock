@@ -625,6 +625,7 @@ dependencies = [
  "chrono",
  "druid",
  "image",
+ "once_cell",
  "rand",
  "rayon",
  "reqwest",

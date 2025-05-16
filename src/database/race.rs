@@ -1,9 +1,8 @@
 use crate::database::connection::get_connection;
 use crate::model::{Lap, RaceDriverResult, RaceResult, SeasonSchedule};
-use rusqlite::named_params;
 use std::collections::HashMap;
 
-pub fn get_season_schedule_by_id(season_schedule_id: i32) -> Option<SeasonSchedule> {
+pub fn get_season_schedule_by_id(season_schedule_id: &u16) -> Option<SeasonSchedule> {
     let conn = get_connection().unwrap();
     let mut stmt = conn
         .prepare("SELECT id, fk_circuit_id, date, status FROM season_schedules WHERE id = ?")
@@ -22,7 +21,7 @@ pub fn get_season_schedule_by_id(season_schedule_id: i32) -> Option<SeasonSchedu
     }
 }
 
-pub fn get_race_id_by_grandprix_name(grand_prix_name: &str) -> Option<i32> {
+pub fn get_race_id_by_grandprix_name(grand_prix_name: &str) -> Option<u16> {
     let conn = get_connection().unwrap();
     let mut stmt = conn
         .prepare("SELECT id FROM season_schedules WHERE grand_prix_name = ?")
@@ -34,7 +33,7 @@ pub fn get_race_id_by_grandprix_name(grand_prix_name: &str) -> Option<i32> {
     }
 }
 
-pub fn update_race_status(season_schedule_id: i32, status: &str) {
+pub fn update_race_status(season_schedule_id: u16, status: &str) {
     let conn = get_connection().unwrap();
     let mut stmt = conn
         .prepare("UPDATE season_schedules SET status = ? WHERE id = ?")
@@ -44,43 +43,45 @@ pub fn update_race_status(season_schedule_id: i32, status: &str) {
 }
 
 pub fn save_driver_results(
-    season_schedule_id: i32,
-    driver_results: Vec<(i32, (RaceDriverResult, Vec<Lap>))>,
+    season_schedule_id: u16,
+    driver_results: Vec<(u16, (RaceDriverResult, Vec<Lap>))>,
 ) {
     let mut conn = get_connection().unwrap();
     let tx = conn.transaction().unwrap();
     {
-        let mut stmt_race_driver_results = tx.prepare(
-            r#"INSERT INTO race_driver_results (
+        let mut stmt_race_driver_results = tx
+            .prepare(
+                r#"INSERT INTO race_driver_results (
                 fk_season_schedule_id, fk_driver_id, fk_team_id, placement, points, status
-            ) VALUES (:fk_season_schedule_id, :fk_driver_id, :fk_team_id, :placement, :points, :status)"#
-        ).unwrap();
+            ) VALUES (?, ?, ?, ?, ?, ?)"#,
+            )
+            .unwrap();
         let mut stmt_laps = tx
             .prepare(
                 r#"INSERT INTO laps (
                 fk_race_driver_result_id, lap_time_ms, lap_number
-            ) VALUES (:fk_race_driver_result_id, :lap_time_ms, :lap_number)"#,
+            ) VALUES (?, ?, ?)"#,
             )
             .unwrap();
         for (_driver_id, (race_driver_result, laps)) in driver_results {
             stmt_race_driver_results
-                .execute(named_params! {
-                    ":fk_season_schedule_id": season_schedule_id,
-                    ":fk_driver_id": race_driver_result.driver_id,
-                    ":fk_team_id": race_driver_result.team_id,
-                    ":placement": race_driver_result.placement,
-                    ":points": race_driver_result.points,
-                    ":status": race_driver_result.status,
-                })
+                .execute([
+                    &season_schedule_id.to_string(),
+                    &race_driver_result.driver_id.to_string(),
+                    &race_driver_result.team_id.to_string(),
+                    &race_driver_result.placement.to_string(),
+                    &race_driver_result.points.to_string(),
+                    &race_driver_result.status,
+                ])
                 .unwrap();
             let race_driver_result_id = tx.last_insert_rowid();
             for lap in laps {
                 stmt_laps
-                    .execute(named_params! {
-                        ":fk_race_driver_result_id": race_driver_result_id,
-                        ":lap_time_ms": lap.lap_time_ms,
-                        ":lap_number": lap.lap_number,
-                    })
+                    .execute([
+                        &race_driver_result_id.to_string(),
+                        &lap.lap_time_ms.to_string(),
+                        &lap.lap_number.to_string(),
+                    ])
                     .unwrap();
             }
         }
@@ -112,7 +113,7 @@ pub fn get_next_race() -> Option<SeasonSchedule> {
     }
 }
 
-pub fn get_race_results(race_id: &i32) -> Vec<RaceResult> {
+pub fn get_race_results(race_id: &u16) -> Vec<RaceResult> {
     let conn = get_connection().unwrap();
     let mut stmt = conn
         .prepare(
@@ -284,11 +285,11 @@ pub fn get_race_schedule_info() -> Vec<Vec<String>> {
     rows.filter_map(Result::ok).collect()
 }
 
-pub fn is_next_race(race_id: i32) -> bool {
+pub fn is_next_race(race_id: &u16) -> bool {
     let conn = get_connection().unwrap();
     let mut stmt = conn
         .prepare("SELECT MIN(id) FROM season_schedules WHERE status = 'Upcoming'")
         .unwrap();
-    let min_upcoming_id: Option<i32> = stmt.query_row([], |row| row.get(0)).ok();
-    min_upcoming_id == Some(race_id)
+    let min_upcoming_id: Option<u16> = stmt.query_row([], |row| row.get(0)).ok();
+    min_upcoming_id == Some(*race_id)
 }
