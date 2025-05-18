@@ -7,11 +7,9 @@ use druid::{Env, Widget, WidgetExt};
 pub fn build_screen() -> impl Widget<AppState> {
     let teams = get_all_teams();
 
-    // Create balanced columns
     let mut left_column = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
     let mut right_column = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
 
-    // Manual counts for balancing
     let mut left_count = 0;
     let mut right_count = 0;
 
@@ -19,7 +17,6 @@ pub fn build_screen() -> impl Widget<AppState> {
         let team_label =
             Label::new(format!("{} ({})", full_name, &short_name)).with_text_size(16.0);
 
-        // Build driver column manually
         let mut driver_column = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
         driver_column.add_child(team_label);
         driver_column.add_spacer(5.0);
@@ -29,15 +26,13 @@ pub fn build_screen() -> impl Widget<AppState> {
             driver_column.add_child(driver_label);
         }
 
-        // Balance columns manually
         if left_count <= right_count {
             left_column.add_child(driver_column);
             left_column.add_spacer(10.0);
 
             left_column.add_child(Button::new("Select").on_click({
-                let short_name = short_name.clone(); // clone needed because short_name is &String
+                let short_name = short_name.clone();
                 move |ctx, data: &mut AppState, _env| {
-                    println!("Selected team: {}", short_name);
                     data.selected_team = Some(short_name.clone());
                     ctx.request_update();
                 }
@@ -52,7 +47,6 @@ pub fn build_screen() -> impl Widget<AppState> {
             right_column.add_child(Button::new("Select").on_click({
                 let short_name = short_name.clone();
                 move |ctx, data: &mut AppState, _env| {
-                    println!("Selected team: {}", short_name);
                     data.selected_team = Some(short_name.clone());
                     ctx.request_update();
                 }
@@ -81,7 +75,6 @@ pub fn build_screen() -> impl Widget<AppState> {
         })
         .disabled_if(|data: &AppState, _env| data.selected_team.is_none());
 
-    // Display selected team
     let selected_team_label = Label::<AppState>::new(|data: &AppState, _env: &Env| {
         if let Some(ref team) = data.selected_team {
             format!("Selected team: {}", team)

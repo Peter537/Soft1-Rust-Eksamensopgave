@@ -3,6 +3,7 @@ use crate::util::file::download_file;
 use once_cell::sync::Lazy;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use std::collections::HashSet;
+use std::error::Error;
 use std::path::PathBuf;
 use std::{env, fs};
 
@@ -132,7 +133,7 @@ const MOD_IMAGE_PATHS: [(&'static str, &'static [&str]); 5] = [
     ("Teams", &TEAMS),
 ];
 
-pub fn create_files_if_not_exist() -> Result<(), Box<dyn std::error::Error>> {
+pub fn create_files_if_not_exist() -> Result<(), Box<dyn Error>> {
     let mod_default_path = get_mod_default_path();
 
     fs::create_dir_all(&mod_default_path)?;
@@ -158,26 +159,13 @@ pub fn create_files_if_not_exist() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!("Starting downloads...");
-    println!("Total files to download: {}", downloads.len());
-    let results: Vec<Result<(), Box<dyn std::error::Error + Send>>> = downloads
+    let results: Vec<Result<(), Box<dyn Error + Send>>> = downloads
         .into_par_iter()
-        .map(|(url, dest)| {
-            println!(
-                "Attempting to download from URL: {} to destination: {:?}",
-                url, dest
-            );
-            let result = download_file(&url, &dest);
-            if let Err(ref e) = result {
-                println!("Failed to download {}: {}", url, e);
-            }
-            result
-        })
+        .map(|(url, dest)| download_file(&url, &dest))
         .collect();
 
     let errors: Vec<_> = results.into_iter().filter_map(Result::err).collect();
     if !errors.is_empty() {
-        println!("Errors occurred during file downloads: {:?}", errors);
         return Err(format!("Failed to download some files: {:?}", errors).into());
     }
 
@@ -214,7 +202,6 @@ pub fn create_new_career() {
     let new_career_number = if existing.is_empty() {
         1
     } else {
-        // find the lowest number possible that isn't already taken
         let mut new_career_number = 1;
         while existing.contains(&new_career_number) {
             new_career_number += 1;
@@ -233,4 +220,8 @@ pub fn create_new_career() {
 
 pub fn get_mod_default_path() -> &'static PathBuf {
     &*MOD_DEFAULT_PATH
+}
+
+pub fn get_game_saves_path() -> &'static PathBuf {
+    &*GAME_SAVES_PATH
 }

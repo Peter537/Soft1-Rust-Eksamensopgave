@@ -5,7 +5,6 @@ use crate::database::race::{get_season_schedule_by_id, save_driver_results, upda
 use crate::model::{Driver, Lap, RaceDriverResult};
 use rand::Rng;
 
-// Constants for the lap algorithm
 const BASE_SPEED: f32 = 200.0; // Average speed in km/h
 const RATING_MAX: u8 = 100; // Maximum driver rating
 const RATING_MIN: u8 = 70; // Minimum driver rating
@@ -13,7 +12,6 @@ const RANDOMNESS_FACTOR: f32 = 0.05; // 5% variability
 
 const POINTS: [u16; 10] = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 
-/// Starts a race simulation and saves the results to the database.
 pub fn start_race(season_schedule_id: u16) {
     let race = get_season_schedule_by_id(&season_schedule_id).unwrap();
     let circuit = get_circuit_by_id(&race.circuit_id).unwrap();
@@ -30,7 +28,6 @@ pub fn start_race(season_schedule_id: u16) {
     update_race_status(season_schedule_id, "Finished");
 }
 
-/// Generates lap times for all drivers based on their rating and circuit length.
 fn generate_driver_lap_times(
     drivers: &[Driver],
     lap_amount: u8,
@@ -48,7 +45,6 @@ fn generate_driver_lap_times(
     driver_lap_times
 }
 
-/// Calculates total times for each driver and sorts them.
 fn calculate_driver_total_times(driver_lap_times: &[(u16, Vec<f32>)]) -> Vec<(u16, f32)> {
     let mut driver_total_times = Vec::new();
     for (driver_id, laps) in driver_lap_times {
@@ -59,7 +55,6 @@ fn calculate_driver_total_times(driver_lap_times: &[(u16, Vec<f32>)]) -> Vec<(u1
     driver_total_times
 }
 
-/// Creates race results and lap objects for all drivers.
 fn create_driver_results(
     driver_total_times: &[(u16, f32)],
     driver_lap_times: &[(u16, Vec<f32>)],
@@ -93,7 +88,6 @@ fn create_driver_results(
     driver_results
 }
 
-/// Returns points based on placement.
 fn get_points(placement: u8) -> u16 {
     if placement <= 10 {
         POINTS[(placement - 1) as usize]
@@ -102,13 +96,11 @@ fn get_points(placement: u8) -> u16 {
     }
 }
 
-/// Generates a lap time for a driver based on their rating and circuit length.
 fn generate_lap_time(driver_rating: u8, circuit_length: f32) -> f32 {
     // calculate base lap time (in hours)
     let base_lap_time = circuit_length / BASE_SPEED;
 
-    // adjust based on driver rating
-    // higher rating -> lower lap time (faster)
+    // adjust based on driver rating, higher rating -> lower lap time (faster)
     let driver_factor =
         1.0 - ((driver_rating - RATING_MIN) as f32 / (RATING_MAX - RATING_MIN) as f32) * 0.02;
     let adjusted_lap_time = base_lap_time * driver_factor;

@@ -80,8 +80,8 @@ pub fn get_top_driver_standings(limit: Option<u8>) -> Vec<Vec<String>> {
     let rows = stmt
         .query_map([], |row| {
             Ok(vec![
-                row.get::<_, String>(0)?,          // driver_name
-                row.get::<_, i32>(1)?.to_string(), // total_points
+                row.get::<_, String>(0)?,
+                row.get::<_, i32>(1)?.to_string(),
             ])
         })
         .unwrap();

@@ -13,7 +13,6 @@ use druid::widget::{
 };
 use druid::{Command, Env, LifeCycle, LifeCycleCtx, Target, Widget, WidgetExt};
 
-// Controller to set the current date when the widget is added
 struct InitDateController;
 
 impl<W: Widget<AppState>> Controller<AppState, W> for InitDateController {
@@ -34,9 +33,7 @@ impl<W: Widget<AppState>> Controller<AppState, W> for InitDateController {
 }
 
 pub fn build_screen() -> impl Widget<AppState> {
-    // Safely handle `get_next_race`
     let next_race = get_next_race().unwrap();
-    // Safely parse the next race date
     let next_race_day = NaiveDate::parse_from_str(&next_race.date, "%Y-%m-%d").unwrap();
 
     let new_action_button =
@@ -49,12 +46,10 @@ pub fn build_screen() -> impl Widget<AppState> {
                     race_id: next_race.id.clone(),
                 };
                 _ctx.request_update();
-                println!("Racing now...");
             } else {
                 update_current_date(&next_race_day);
                 _data.current_date = next_race_day.to_string();
                 _ctx.request_update();
-                println!("Advanced to next race date.");
             }
         });
 
@@ -79,7 +74,6 @@ pub fn build_screen() -> impl Widget<AppState> {
     );
     column1.add_spacer(10.0);
 
-    // Column 2 - My team standings & short Leaderboards
     let (team_name, drivers, total_points) =
         get_own_team_standing().unwrap_or(("".to_string(), vec![], 0));
 

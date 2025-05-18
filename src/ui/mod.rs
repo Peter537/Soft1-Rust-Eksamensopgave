@@ -1,4 +1,3 @@
-// Defines the application state and orchestrates UI components by switching between screens.
 use crate::ui::Screen::{
     DriverListScreen, Leaderboard, MainGameScreen, RaceScheduleScreen, TeamListScreen,
 };
@@ -13,7 +12,6 @@ pub const RESET_GAME_STATE: Selector = Selector::new("app.reset-game-state");
 pub const SET_SCREEN: Selector<Screen> = Selector::new("app.set-screen");
 pub const SHOW_ERROR: Selector<String> = Selector::new("app.show-error");
 
-// Public submodules for screen-specific UI logic
 mod choose_team_screen;
 mod driver_list_screen;
 mod driver_screen;
@@ -68,7 +66,6 @@ impl Default for AppState {
 
 pub fn build_ui() -> impl druid::Widget<AppState> {
     ViewSwitcher::new(
-        // 👇 Track BOTH current_screen AND game_number
         |data: &AppState, _env| (data.current_screen.clone(), data.game_number.clone()),
         |(screen, _game_number), _data, _env| -> Box<dyn druid::Widget<AppState>> {
             fn with_navbar(inner: impl Widget<AppState> + 'static) -> impl Widget<AppState> {
@@ -137,7 +134,6 @@ fn build_navbar() -> impl Widget<AppState> {
         ctx.request_update();
     });
 
-    // Create left group (home + nav buttons)
     let left_side = Flex::row()
         .with_child(home_button)
         .with_spacer(10.0)
@@ -149,13 +145,12 @@ fn build_navbar() -> impl Widget<AppState> {
         .with_spacer(10.0)
         .with_child(leaderboard_button);
 
-    // Align the exit button to the far right with a spacer in between
     Flex::row()
-        .with_flex_child(left_side, 1.0) // Left side takes up all available space
-        .with_flex_spacer(1.0) // Spacer takes up remaining space
-        .with_child(exit_button) // Exit button is placed at the far right
+        .with_flex_child(left_side, 1.0)
+        .with_flex_spacer(1.0)
+        .with_child(exit_button)
         .padding(10.0)
-        .background(Color::rgba8(0, 0, 125, 60)) // 80% opacity as 204 in 0-255 range
+        .background(Color::rgba8(0, 0, 125, 60))
 }
 
 pub struct MyAppDelegate;
@@ -179,21 +174,16 @@ impl druid::AppDelegate<AppState> for MyAppDelegate {
             data.current_date = new_date.clone();
             Handled::Yes
         } else if cmd.is(RESET_GAME_STATE) {
-            println!("🔁 Resetting game state...");
-
-            // Clear and reset game-related state
             data.selected_team = None;
-            data.game_number = "temp-trigger".to_string(); // Force ViewSwitcher to rerender
+            data.game_number = "temp-trigger".to_string();
             data.current_screen = Screen::Main;
-            data.game_number.clear(); // Final clear
-
+            data.game_number.clear();
             Handled::Yes
         } else if let Some(new_screen) = cmd.get(SET_SCREEN) {
             data.current_screen = new_screen.clone();
             Handled::Yes
-        } else if let Some(error_msg) = cmd.get(SHOW_ERROR) {
-            println!("Error: {}", error_msg); // Replace with UI error display if desired
-            data.current_screen = Screen::Main; // Fallback to main screen
+        } else if let Some(_) = cmd.get(SHOW_ERROR) {
+            data.current_screen = Screen::Main;
             Handled::Yes
         } else {
             Handled::No

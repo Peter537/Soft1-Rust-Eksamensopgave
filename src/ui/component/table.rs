@@ -2,7 +2,6 @@ use super::super::AppState;
 use druid::widget::{Container, Controller, Flex, Label};
 use druid::{Color, Env, Event, EventCtx, Widget, WidgetExt};
 
-// Controller to handle click events on a cell
 struct ButtonController {
     on_click: Option<Box<dyn Fn(&mut EventCtx, &mut AppState)>>,
 }
@@ -51,21 +50,17 @@ pub fn make_table(
     )>,
 ) -> impl Widget<AppState> {
     if columns.is_empty() {
-        println!("Column is empty!");
         return Flex::column();
     }
 
     if !validate_data(columns.len(), &data) {
-        println!("Data validation failed: inconsistent row sizes.");
         return Flex::column();
     }
 
-    // Calculate maximum width for each column (based on character length)
     let col_widths = calculate_column_widths(&columns, &data);
 
     let mut table = Flex::column();
 
-    // Header row with borders
     let mut header_row = Flex::row();
     for (i, header) in columns.iter().enumerate() {
         header_row.add_child(bordered_cell(Label::new(header.clone()), col_widths[i]));
@@ -73,19 +68,15 @@ pub fn make_table(
     table.add_child(header_row);
     table.add_spacer(8.0);
 
-    // Data rows with borders
     for row in data.iter() {
         let mut row_container = Flex::row();
         for (col_idx, cell) in row.iter().enumerate() {
-            // Check if this column is clickable
             if let Some((_, handler_fn)) = clickable_cols.iter().find(|(idx, _)| *idx == col_idx) {
-                // Create a click handler for this cell
                 let handler = handler_fn(cell);
                 let cell_widget = Label::new(cell.clone());
                 let cell_widget = cell_widget.controller(ButtonController::new(Some(handler)));
                 row_container.add_child(bordered_cell(cell_widget, col_widths[col_idx]));
             } else {
-                // Non-clickable cell
                 row_container
                     .add_child(bordered_cell(Label::new(cell.clone()), col_widths[col_idx]));
             }
@@ -104,24 +95,19 @@ fn bordered_cell<W: Widget<AppState> + 'static>(child: W, width: f64) -> impl Wi
         .fix_height(30.0)
 }
 
-// Calculate the maximum width for each column based on character length
 fn calculate_column_widths(column: &[String], data: &[Vec<String>]) -> Vec<f64> {
     let mut widths = vec![0; column.len()];
 
-    // Check header widths
     for (i, header) in column.iter().enumerate() {
         widths[i] = header.len();
     }
 
-    // Check data widths
     for row in data {
         for (i, cell) in row.iter().enumerate() {
             widths[i] = widths[i].max(cell.len());
         }
     }
 
-    // Convert character lengths to pixel widths (approximate)
-    // Adjust the multiplier based on font size and desired spacing
     widths
         .into_iter()
         .map(|len| (len as f64) * 8.0 + 16.0)

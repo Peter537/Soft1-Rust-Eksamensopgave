@@ -16,18 +16,27 @@ use druid::widget::{
 use druid::{Color, Env, Widget, WidgetExt};
 
 pub fn build_screen(race_id: u16) -> impl Widget<AppState> {
-    // Fetch circuit info
-    let (circuit_image, circuit_country_image, circuit_info) = circuit_info(race_id);
+    let circuit_data = get_circuit_by_id(&race_id).unwrap();
+    let circuit_image = get_circuit(&circuit_data.image_path)
+        .fix_width(400.0)
+        .fix_height(300.0);
+    let circuit_country_image =
+        get_country(&get_country_image_path(&circuit_data.country_id).unwrap());
 
-    // This ViewSwitcher watches `last_race_update_time`.
-    // Whenever that String changes, it re‑runs the builder closure.
+    let circuit_info: Container<AppState> = Container::new(
+        Flex::column()
+            .with_child(Label::new(format!("Circuit: {}", circuit_data.name)))
+            .with_child(Label::new(format!("Location: {}", circuit_data.city)))
+            .with_child(Label::new(format!("Length: {} km", circuit_data.length_km)))
+            .with_child(Label::new(format!("Laps: {}", circuit_data.lap_amount))),
+    )
+    .padding(10.0)
+    .border(Color::grey(0.5), 1.0);
+
     let results_switcher = ViewSwitcher::new(
-        // child_picker: our key is the timestamp string
         |data: &AppState, _env: &Env| data.last_race_update_time.clone(),
-        // child_builder: rebuilds on every timestamp bump
         move |_key, _data: &AppState, _env| {
             if get_season_schedule_by_id(&race_id).unwrap().status == "Finished" {
-                // ——— Build the results table ———
                 let results = get_race_results(&race_id);
                 let rows: Vec<Vec<String>> = results
                     .into_iter()
@@ -66,17 +75,12 @@ pub fn build_screen(race_id: u16) -> impl Widget<AppState> {
                         ),
                 )
             } else if is_next_race(&race_id) {
-                // ——— Re‑create the “Start Race” button fresh ———
                 let btn =
                     Button::new("Start Race").on_click(move |ctx, data: &mut AppState, _env| {
-                        // 1) Run your backend
                         start_race(race_id);
-                        // 2) Stamp the clock so ViewSwitcher kicks in
                         data.last_race_update_time = Utc::now().to_string();
-                        // 3) Keep on the same screen
                         data.current_screen = RaceScreen { race_id };
                         ctx.request_update();
-                        println!("Start Race button clicked!");
                     });
                 Box::new(btn)
             } else {
@@ -85,19 +89,16 @@ pub fn build_screen(race_id: u16) -> impl Widget<AppState> {
         },
     );
 
-    // Assemble column1 with status label + switcher
     let column1 = Flex::column()
         .cross_axis_alignment(druid::widget::CrossAxisAlignment::Start)
         .with_spacer(10.0)
         .with_child(results_switcher);
 
-    // Column 2: Circuit information
     let mut column2 = Flex::column().cross_axis_alignment(CrossAxisAlignment::Start);
     column2.add_child(circuit_image);
     column2.add_child(circuit_country_image);
     column2.add_child(circuit_info);
 
-    // Main layout
     Flex::column()
         .cross_axis_alignment(CrossAxisAlignment::Center)
         .with_flex_child(
@@ -110,31 +111,4 @@ pub fn build_screen(race_id: u16) -> impl Widget<AppState> {
                 .with_flex_child(column2, 1.0),
             1.0,
         )
-}
-
-fn circuit_info(
-    id: u16,
-) -> (
-    impl Widget<AppState>,
-    impl Widget<AppState>,
-    impl Widget<AppState>,
-) {
-    let circuit_data = get_circuit_by_id(&id).unwrap();
-    let circuit_image = get_circuit(&circuit_data.image_path)
-        .fix_width(400.0)
-        .fix_height(300.0);
-    let circuit_country_image =
-        get_country(&get_country_image_path(&circuit_data.country_id).unwrap());
-
-    let circuit_info: Container<AppState> = Container::new(
-        Flex::column()
-            .with_child(Label::new(format!("Circuit: {}", circuit_data.name)))
-            .with_child(Label::new(format!("Location: {}", circuit_data.city)))
-            .with_child(Label::new(format!("Length: {} km", circuit_data.length_km)))
-            .with_child(Label::new(format!("Laps: {}", circuit_data.lap_amount))),
-    )
-    .padding(10.0)
-    .border(Color::grey(0.5), 1.0);
-
-    (circuit_image, circuit_country_image, circuit_info)
 }
