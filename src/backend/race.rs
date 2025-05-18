@@ -2,77 +2,87 @@ use crate::database::circuit::get_circuit_by_id;
 use crate::database::driver::get_all_drivers;
 use crate::database::driver::get_team_id_by_driver_id;
 use crate::database::race::{get_season_schedule_by_id, save_driver_results, update_race_status};
-use crate::model::Lap;
-use crate::model::RaceDriverResult;
+use crate::model::{Driver, Lap, RaceDriverResult};
 use rand::Rng;
 
+// Constants for the lap algorithm
+const BASE_SPEED: f32 = 200.0; // Average speed in km/h
+const RATING_MAX: u8 = 100; // Maximum driver rating
+const RATING_MIN: u8 = 70; // Minimum driver rating
+const RANDOMNESS_FACTOR: f32 = 0.05; // 5% variability
+
+const POINTS: [u16; 10] = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
+
+/// Starts a race simulation and saves the results to the database.
 pub fn start_race(season_schedule_id: u16) {
-    // 1. Hent object fra databasen
-    println!("Starting get_season_schedule_by_id");
     let race = get_season_schedule_by_id(&season_schedule_id).unwrap();
-
-    println!("Starting get_circuit_by_id");
     let circuit = get_circuit_by_id(&race.circuit_id).unwrap();
-
-    // 2. Hent alle drivers fra databasen
-    println!("Starting get_all_drivers");
     let drivers = get_all_drivers();
 
-    // 3. Opret laptimes i form af Vec<DriverID, <Lap>>
-    println!("Generating lap times for drivers");
-    let mut driver_laps: Vec<(u16, Vec<f32>)> = Vec::new();
+    let driver_lap_times =
+        generate_driver_lap_times(&drivers, circuit.lap_amount, circuit.length_km);
+
+    let driver_total_times = calculate_driver_total_times(&driver_lap_times);
+
+    let driver_results = create_driver_results(&driver_total_times, &driver_lap_times);
+
+    save_driver_results(season_schedule_id, driver_results);
+    update_race_status(season_schedule_id, "Finished");
+}
+
+/// Generates lap times for all drivers based on their rating and circuit length.
+fn generate_driver_lap_times(
+    drivers: &[Driver],
+    lap_amount: u8,
+    circuit_length: f32,
+) -> Vec<(u16, Vec<f32>)> {
+    let mut driver_lap_times = Vec::new();
     for driver in drivers {
         let mut lap_times = Vec::new();
-        for _ in 0..circuit.lap_amount {
-            let lap_time = generate_lap_time(driver.rating, circuit.length_km);
+        for _ in 0..lap_amount {
+            let lap_time = generate_lap_time(driver.rating, circuit_length);
             lap_times.push(lap_time);
         }
-        driver_laps.push((driver.id, lap_times));
+        driver_lap_times.push((driver.id, lap_times));
     }
+    driver_lap_times
+}
 
-    // 4. Find top-10 drivers ud fra lap times
-    println!("Calculating total lap times for drivers");
-    let mut total_driver_time: Vec<(u16, f32)> = Vec::new();
-    for (driver_id, laps) in driver_laps.iter() {
+/// Calculates total times for each driver and sorts them.
+fn calculate_driver_total_times(driver_lap_times: &[(u16, Vec<f32>)]) -> Vec<(u16, f32)> {
+    let mut driver_total_times = Vec::new();
+    for (driver_id, laps) in driver_lap_times {
         let total_time: f32 = laps.iter().sum();
-        total_driver_time.push((*driver_id, total_time));
+        driver_total_times.push((*driver_id, total_time));
     }
-    total_driver_time.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+    driver_total_times.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+    driver_total_times
+}
 
-    // 5. Create driver result objects
-    println!("Creating driver results and laps");
-    let mut driver_results: Vec<(u16, (RaceDriverResult, Vec<Lap>))> = Vec::new();
-    for (index, (driver_id, _)) in total_driver_time.iter().enumerate() {
+/// Creates race results and lap objects for all drivers.
+fn create_driver_results(
+    driver_total_times: &[(u16, f32)],
+    driver_lap_times: &[(u16, Vec<f32>)],
+) -> Vec<(u16, (RaceDriverResult, Vec<Lap>))> {
+    let mut driver_results = Vec::new();
+    for (index, (driver_id, _)) in driver_total_times.iter().enumerate() {
         let placement = (index + 1) as u8;
-        let points = match placement {
-            1 => 25,
-            2 => 18,
-            3 => 15,
-            4 => 12,
-            5 => 10,
-            6 => 8,
-            7 => 6,
-            8 => 4,
-            9 => 2,
-            10 => 1,
-            _ => 0,
-        };
-
-        let team_id = get_team_id_by_driver_id(&driver_id).unwrap();
+        let points = get_points(placement);
+        let team_id = get_team_id_by_driver_id(driver_id).unwrap();
 
         let race_driver_result = RaceDriverResult {
             driver_id: *driver_id,
-            team_id: team_id,
+            team_id,
             placement,
             points,
             status: "Finished".to_string(),
         };
 
         let mut laps = Vec::new();
-        if let Some((_, lap_times)) = driver_laps.iter().find(|(id, _)| id == driver_id) {
+        if let Some((_, lap_times)) = driver_lap_times.iter().find(|(id, _)| id == driver_id) {
             for (lap_number, lap_time) in lap_times.iter().enumerate() {
                 laps.push(Lap {
-                    lap_time_ms: (*lap_time * 1000.0) as u32, // Convert seconds to milliseconds
+                    lap_time_ms: (*lap_time * 1000.0) as u32,
                     lap_number: (lap_number + 1) as u8,
                 });
             }
@@ -80,37 +90,34 @@ pub fn start_race(season_schedule_id: u16) {
 
         driver_results.push((*driver_id, (race_driver_result, laps)));
     }
-
-    // 6. Update season_schedule i databasen
-    println!("updating race status to Finished");
-    update_race_status(season_schedule_id, "Finished");
-
-    // 7. Gem driver race result & laps i databasen
-    println!("Saving driver results and laps to database");
-    save_driver_results(season_schedule_id, driver_results);
+    driver_results
 }
 
-fn generate_lap_time(driver_rating: u8, circuit_length: f32) -> f32 {
-    // Constants for the algorithm
-    const BASE_SPEED: f32 = 200.0; // Average speed in km/h
-    const RATING_MAX: u8 = 100; // Maximum driver rating
-    const RATING_MIN: u8 = 70; // Minimum driver rating
-    const RANDOMNESS_FACTOR: f32 = 0.05; // 5% variability
+/// Returns points based on placement.
+fn get_points(placement: u8) -> u16 {
+    if placement <= 10 {
+        POINTS[(placement - 1) as usize]
+    } else {
+        0
+    }
+}
 
-    // Step 1: Calculate base lap time (in hours)
+/// Generates a lap time for a driver based on their rating and circuit length.
+fn generate_lap_time(driver_rating: u8, circuit_length: f32) -> f32 {
+    // calculate base lap time (in hours)
     let base_lap_time = circuit_length / BASE_SPEED;
 
-    // Step 2: Adjust based on driver rating
-    // Higher rating -> lower lap time (faster)
+    // adjust based on driver rating
+    // higher rating -> lower lap time (faster)
     let driver_factor =
         1.0 - ((driver_rating - RATING_MIN) as f32 / (RATING_MAX - RATING_MIN) as f32) * 0.02;
     let adjusted_lap_time = base_lap_time * driver_factor;
 
-    // Step 3: Add randomness (±5% variation)
+    // add randomness (±5% variation)
     let mut rng = rand::thread_rng();
     let random_factor = 1.0 + (rng.gen::<f32>() * 2.0 - 1.0) * RANDOMNESS_FACTOR;
     let final_lap_time = adjusted_lap_time * random_factor;
 
-    // Step 4: Convert to seconds for output
+    // convert to seconds for output
     final_lap_time * 3600.0
 }
