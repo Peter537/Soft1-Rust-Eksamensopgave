@@ -136,6 +136,8 @@ pub fn create_files_if_not_exist() -> Result<(), Box<dyn std::error::Error>> {
     let mod_default_path = get_mod_default_path();
 
     fs::create_dir_all(&mod_default_path)?;
+    fs::create_dir_all(&*GAME_SAVES_PATH)?;
+    fs::create_dir_all(&*CONFIG_PATH)?;
 
     let mut downloads = Vec::new();
 
@@ -179,12 +181,6 @@ pub fn create_files_if_not_exist() -> Result<(), Box<dyn std::error::Error>> {
         return Err(format!("Failed to download some files: {:?}", errors).into());
     }
 
-    //let game_saves_path = base_path.join("GameSaves");
-    fs::create_dir_all(&*GAME_SAVES_PATH)?;
-
-    //let config_path = base_path.join("Config");
-    fs::create_dir_all(&*CONFIG_PATH)?;
-
     Ok(())
 }
 
@@ -226,7 +222,7 @@ pub fn create_new_career() {
         new_career_number
     };
 
-    set_game_number(new_career_number as u16); // Set the game number for the new career
+    set_game_number(new_career_number as u16);
 
     fs::copy(
         &*BASE_PATH.join("Mod").join("Default").join("database.db"),

@@ -60,11 +60,6 @@ pub fn make_table(
         return Flex::column();
     }
 
-    /* println!("Column: {:?}", column);
-    for row in data.iter() {
-        println!("Row: {:?}", row);
-    } */
-
     // Calculate maximum width for each column (based on character length)
     let col_widths = calculate_column_widths(&columns, &data);
 
