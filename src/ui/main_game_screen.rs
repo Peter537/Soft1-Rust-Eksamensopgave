@@ -33,8 +33,12 @@ impl<W: Widget<AppState>> Controller<AppState, W> for InitDateController {
 }
 
 pub fn build_screen() -> impl Widget<AppState> {
-    let next_race = get_next_race().unwrap();
-    let next_race_day = NaiveDate::parse_from_str(&next_race.date, "%Y-%m-%d").unwrap();
+    let next_race_day: String = match get_next_race() {
+        Some(race) => NaiveDate::parse_from_str(&race.date, "%Y-%m-%d")
+            .unwrap()
+            .to_string(),
+        None => "None".to_string(),
+    };
 
     let new_action_button =
         Button::new("New Action").on_click(move |_ctx, _data: &mut AppState, _env| {
@@ -85,7 +89,9 @@ pub fn build_screen() -> impl Widget<AppState> {
     column2.add_child(Label::new(
         "Next Race Date: ".to_owned() + &next_race_day.to_string(),
     ));
-    column2.add_child(new_action_button);
+    if next_race_day != "None".to_string() {
+        column2.add_child(new_action_button);
+    }
 
     column2.add_spacer(10.0);
     column2.add_child(Label::new("My Team").with_text_size(20.0));
