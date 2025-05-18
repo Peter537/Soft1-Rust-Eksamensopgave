@@ -12,7 +12,7 @@ fn get_image_at(path: PathBuf) -> Box<dyn Widget<AppState>> {
         return Box::new(Label::new("Image not found").with_text_color(Color::RED));
     }
 
-    let dyn_image = open(&image_path).expect("Failed to open image");
+    let dyn_image = open(image_path).expect("Failed to open image");
     let rgba_image = dyn_image.to_rgba8();
     let (width, height) = rgba_image.dimensions();
 

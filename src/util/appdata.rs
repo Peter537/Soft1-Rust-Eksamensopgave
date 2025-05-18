@@ -222,7 +222,7 @@ pub fn create_new_career() {
         new_career_number
     };
 
-    set_game_number(new_career_number as u16);
+    set_game_number(new_career_number);
 
     fs::copy(
         &*BASE_PATH.join("Mod").join("Default").join("database.db"),
