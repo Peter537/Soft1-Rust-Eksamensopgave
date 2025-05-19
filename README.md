@@ -12,6 +12,8 @@
 
 ## Installation Guide
 
+**IMPORTANT**: The project has only been tested on Windows. It might not work on other operating systems.
+
 1. Clone the repository
 2. Run the project, either
     - using `cargo r` in the terminal
