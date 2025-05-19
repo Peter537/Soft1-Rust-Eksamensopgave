@@ -6,6 +6,8 @@ Provide examples of how managing ownership and borrowing helped improve your cod
 
 ### Links
 
+https://chatgpt.com/share/682ae735-18bc-8005-9da0-488f402f302e
+
 ### Code Snippets
 
 ### Additional Information
