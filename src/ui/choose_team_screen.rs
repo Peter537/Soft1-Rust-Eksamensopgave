@@ -77,7 +77,7 @@ pub fn build_screen() -> impl Widget<AppState> {
 
     let selected_team_label = Label::<AppState>::new(|data: &AppState, _env: &Env| {
         if let Some(ref team) = data.selected_team {
-            format!("Selected team: {}", team)
+            team.to_string()
         } else {
             "No team selected".to_string()
         }

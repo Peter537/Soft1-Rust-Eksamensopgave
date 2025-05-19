@@ -33,15 +33,16 @@ impl<W: Widget<AppState>> Controller<AppState, W> for InitDateController {
 }
 
 pub fn build_screen() -> impl Widget<AppState> {
+    let no_races_left_string = "Next Year".to_string();
     let next_race_day: String = match get_next_race() {
         Some(race) => NaiveDate::parse_from_str(&race.date, "%Y-%m-%d")
             .unwrap()
             .to_string(),
-        None => "None".to_string(),
+        None => no_races_left_string.clone(),
     };
 
     let new_action_button =
-        Button::new("New Action").on_click(move |_ctx, _data: &mut AppState, _env| {
+        Button::new("Next Action").on_click(move |_ctx, _data: &mut AppState, _env| {
             let next_race = get_next_race().unwrap();
             let next_race_day = NaiveDate::parse_from_str(&next_race.date, "%Y-%m-%d").unwrap();
 
@@ -67,7 +68,7 @@ pub fn build_screen() -> impl Widget<AppState> {
                     "Date".to_string(),
                     "Race".to_string(),
                     "Winner".to_string(),
-                    "MyTeam Position".to_string(),
+                    "MyTeam Positions".to_string(),
                 ],
                 get_race_list(),
                 vec![(1, goto_race()), (2, goto_driver())],
@@ -89,7 +90,7 @@ pub fn build_screen() -> impl Widget<AppState> {
     column2.add_child(Label::new(
         "Next Race Date: ".to_owned() + &next_race_day.to_string(),
     ));
-    if next_race_day != "None".to_string() {
+    if next_race_day != no_races_left_string {
         column2.add_child(new_action_button);
     }
 

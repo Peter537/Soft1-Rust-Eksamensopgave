@@ -103,7 +103,7 @@ pub fn build_ui() -> impl druid::Widget<AppState> {
 }
 
 fn build_navbar() -> impl Widget<AppState> {
-    let home_button = Button::new("🏠").on_click(|ctx, data: &mut AppState, _env| {
+    let home_button = Button::new("Home").on_click(|ctx, data: &mut AppState, _env| {
         data.current_screen = MainGameScreen;
         ctx.request_update();
     });
