@@ -8,4 +8,36 @@ Explain your use of pub, mod, and other visibility qualifiers to manage encapsul
 
 ### Code Snippets
 
+1. Vi bruger mod.rs til at organisere vores moduler ift. visbility.
+
+`src/database/mod.rs` : linje 4 - 10
+
+```rust
+pub mod circuit;
+pub mod config;
+mod connection;
+pub mod country;
+pub mod driver;
+pub mod race;
+pub mod teams;
+```
+
+Connection er privat, siden den kun skal bruges internt i database modulen.
+
+2. I vores model modul er filerne private, og vi eksponerer kun structs, det gør det lettere at holde styr på hvad der er offentligt og hvad der ikke er, samt at undgå navnekonflikter. Det gør det også nemt at finde de structs man skal bruge i andre moduler, fordi man ikke skal finde hvilken fil de ligger i.
+
+`src/model/mod.rs` : linje 1 - 20
+
+```rust
+mod circuit;
+...
+
+...
+pub use team::TeamBase;
+```
+
 ### Additional Information
+
+- Vi har opdelt vores kode i moduler for at gøre det lettere at finde og vedligeholde koden.
+- Man bruger `pub` til at kontrollere synligheden af hvad man vil have skal blive vist til offentligheden.
+- Når alt bliver privat fra starten, så gør det man kommer til at tænke mere over strukturen af ens kode ift. hvad der skal være offentligt og hvad der ikke skal.
