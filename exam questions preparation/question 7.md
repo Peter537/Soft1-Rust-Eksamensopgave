@@ -4,9 +4,32 @@ Structs and Data Organization: Structs are fundamental for organizing data in Ru
 How did you decide when to use structs versus tuples or arrays in your project?
 Discuss any instances where you used the derive attribute with structs or used impl to add behaviour.
 
-### Links
+## Links
 
-### Code Snippets
+## How it's done in Rust
+
+- Ved at have Derive attributen gør det at vi får mindre boilerplate kode og det er nemmere at ændre structs i fremtiden.
+- Structs er mere læselige og nemmere at forstå end tuples og arrays når det skal bruges til komplekse data strukturer, hvor tuples og arrays er bedre til simple data strukturer fordi de er hurtigere at skrive og mere kompakte.
+- Structs er custom data typer hvor man kan navngive flere relaterede felter.
+  - Det er godt at bruge structs når man vil gruppere relaterede data sammen og give dem meningsfulde navne. Man vil have metoder/traits for at give dem adfærd. Man vil have selvdokumenterende kode.
+- Tuples er en samling af værdier af forskellige typer, og de kan bruges til at repræsentere en enkelt værdi med flere komponenter.
+  - Tuples er gode til at repræsentere en enkelt værdi med flere komponenter, og de er hurtigere at skrive end structs. De er også gode til at returnere flere værdier fra en funktion.
+- Arrays er en samling af værdier af samme type, og de kan bruges til at repræsentere en liste af værdier.
+  - Arrays er gode til at repræsentere en liste af værdier af samme type, og de er hurtigere at skrive end structs. De er også gode til at repræsentere en fast størrelse liste af værdier.
+  - Det er også godt at bruge hvis man skal bruge indexing.
+- Impl er en måde at tilføje metoder og funktioner til structs
+
+### Compared to other languages
+
+Man kan vel lidt sammenligne en struct i Rust med en record i Java ift. det bare er til at præsentere data, og man så gør det til en klasse ligesom i Java ved at tilføje metoder til den.
+
+I C# kan man navngive felter i tuples, så de er mere læselige end Rusts tuples.
+
+### My view
+
+Jeg kan meget godt lide i C# at man kan navngive felter i tuples, det gør dem mere læselige.
+
+## Code Snippets
 
 1. Model-Structs bruges til at repræsentere komplekse entiteter i vores applikation
 
@@ -66,7 +89,4 @@ const TEAMS: [&str; 10] = [
 ];
 ```
 
-### Additional Information
-
-- Ved at have Derive attributen gør det at vi får mindre boilerplate kode og det er nemmere at ændre structs i fremtiden.
-- Structs er mere læselige og nemmere at forstå end tuples og arrays når det skal bruges til komplekse data strukturer, hvor tuples og arrays er bedre til simple data strukturer fordi de er hurtigere at skrive og mere kompakte.
+## Other examples
