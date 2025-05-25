@@ -8,11 +8,14 @@ Explain your use of pub, mod, and other visibility qualifiers to manage encapsul
 
 ## How it's done in Rust
 
+- I Rust er en `crate` et compilation unit, hvor det enten er en binary eller et library. Roden af en crate er `lib.rs` (til libraries) eller `main.rs` (til applikationer).
 - Vi har opdelt vores kode i moduler for at gøre det lettere at finde og vedligeholde koden.
 - Man bruger `pub` til at kontrollere synligheden af hvad man vil have skal blive vist til offentligheden.
 - Når alt bliver privat fra starten, så gør det man kommer til at tænke mere over strukturen af ens kode ift. hvad der skal være offentligt og hvad der ikke skal.
 - Man kan bruge `super` til at gå op til parent modulet
 - `mod` er entry-punktet for et modul (en folder med en `mod.rs` fil)
+- Man kan re-exportere structs og funktioner fra et modul ved at bruge `pub use`, hvilket gør det lettere at holde styr på hvad der er offentligt og hvad der ikke er, samt at undgå navnekonflikter. Det gør også man kan få et cleaner API.
+- Man kan tilgå private metoder i tests ved at bruge `#[cfg(test)]` attributten, som gør at de kun er synlige for test-koden. Det kræver dog at tests er skrevet i samme modul eller i et separat test-modul.
 
 ### Compared to other languages
 
@@ -57,6 +60,22 @@ mod circuit;
 
 ...
 pub use team::TeamBase;
+```
+
+3. Vi burde have brugt sådan noget som `pub(super)` i vores UI componenter, for at gøre dem synlige for deres parent modul, fordi det er kun komponenter som er relateret til UI, og de skal ikke være synlige for andre moduler. Det gør det lettere at holde styr på hvad der er offentligt og hvad der ikke er, samt at undgå navnekonflikter.
+
+`src/ui/components/mod.rs` : linje 1 - 2
+
+```rust
+pub mod goto;
+pub mod table;
+```
+
+Burde have været
+
+```rust
+pub(super) mod goto;
+pub(super) mod table;
 ```
 
 ## Other examples

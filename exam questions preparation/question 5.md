@@ -8,7 +8,7 @@ Include examples of how you used Box, Rc, or RefCell in managing heap data.
 
 ## How it's done in Rust
 
-- I Rust, hver value har en ejer, så når den variabel går ud af scope, så bliver hukommelsen automatisk frigivet.
+- I Rust, hver value har en ejer, så når den variabel går ud af scope, så bliver hukommelsen automatisk frigivet. Det betyder man ikke manuelt skal frigive hukommelse.
 - Smart pointers som `Box`, `Rc`, `Arc` og `Mutex` bliver brugt til heap-allokeret data og shared ownership.
 - Heap allocation sker til store og rekursive data strukturer. Stack allocation er hurtigere og bruges til små data strukturer.
 - `Box` bruges til heap-allokeret data med single ownership. Det der sker med Box er at den bare laver plads i heapen, og så kan man putte data ind i den, så man er ikke begrænset af plads, fx hvis vi laver som i vores UI, hvor vi har forskellige screens som kan have forskellige størrelser.
@@ -24,7 +24,9 @@ Almindelige smart pointers i Rust:
 
 ### Compared to other languages
 
-Det er ikke nødvendigt at bruge `delete` som i C++ eller `Dispose` i C#, eller Garbage Collector som i Java / C#.
+Garbage collection kan gøre at det introducere uforudsigelige pauser i programmet, fordi det kan ske når som helst at Garbage Collector skal rydde op i hukommelsen. Det kan være problematisk i real-time applikationer som spil eller real-time systemer, hvor det er vigtigt at have en forudsigelig performance.
+
+Det er ikke nødvendigt at bruge `delete` som i C++ eller Garbage Collector som i Java / C#.
 
 Java har ikke noget ligesom en slags `Box` smart pointer, det er Garbage Collector der holder styr på hukommelsen. C++ har `std::unique_ptr` som er en smart pointer der holder styr på hukommelsen og frigiver den automatisk når den går ud af scope.
 
@@ -51,6 +53,8 @@ static GAME_NUMBER: AtomicU16 = AtomicU16::new(0);
 ```
 
 3. Vi bruger Box til at returnerer Screens fra vores UI lambda function, fordi vi ikke ved om de har samme størrelse i compile-time.
+
+Her bruger vi også dynamic dispatch, fordi vi ikke ved hvilken type Screen der bliver returneret, så vi bruger en trait object (`Box<dyn Widget<AppState>>`) til at returnere den rigtige type.
 
 `src/ui/mod.rs` : linje 67 - 103
 

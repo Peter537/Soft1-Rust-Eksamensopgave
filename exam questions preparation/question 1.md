@@ -92,6 +92,20 @@ pub fn get_circuit_by_id(circuit_id: &u16) -> Option<Circuit> {
 }
 ```
 
+5. Vi bruger meget `.unwrap()` i vores kode, og det ved vi godt er en trade-off ift. error handling pga programmet ville crashe, men som udgangspunkt så bør disse errors ikke ske da det ville være en bruger-fejl hvis nu fx. databasen blev slettet el.lign.
+
+Der har vi valgt at sige at vi ikke havde nok tid til at håndtere alle slags brugerfejl, så vi har valgt at lave `unwrap()` på de steder hvor vi er sikre på at det ikke vil ske, hvis programmet bare får lov til at køre som tiltænkt.
+
+`src/ui/driver_screen.rs` : linje 11 - 13
+
+```rust
+pub fn build_screen(driver_id: &u16) -> impl Widget<AppState> {
+    let driver = get_driver_by_id(driver_id).unwrap();
+    let driver_contract = get_driver_contract(driver_id).unwrap();
+    ...
+}
+```
+
 ## Other examples
 
 1. `Result` enumen kan enten returnerer Ok(T) eller Err(E). Det er godt til hvis noget kan fejle, ex. en fil download eller database connection.

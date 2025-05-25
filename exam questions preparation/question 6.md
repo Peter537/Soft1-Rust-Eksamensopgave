@@ -13,6 +13,7 @@ What do you think of the pattern matching instead of using switch type statement
   - Pattern matching gør så man skal håndtere alle mulige cases, hvor i andre sprog med switch-cases kan man godt undlade at håndtere en case.
   - Man kan destructure data inde i pattern matching
   - Man kan match guard i pattern matching, ex noget skal ske hvis en værdi er større end 0, og noget andet skal ske hvis den er mindre end 0.
+- Ved at bruge `match`, så kan Rusts compiler optimere udtrykkene ved at lave fx jump tables eller andre optimeringer, så det er hurtigere end at bruge if-else statements.
 
 ### Compared to other languages
 
@@ -26,11 +27,17 @@ Jeg kan godt lide den måde med at man kan både destructure data og have match 
 
 1. Vi bruger pattern-matching på Screen-enum til at håndtere hvilken skærm skal vises i UI.
 
+Her bruger vi også destructuring af data i pattern matching, fordi vi gerne vil have fx. hvilket team_id der skal vises i team screen.
+
 `src/ui/mod.rs` : linje 78 - 100
 
 ```rust
 match screen {
     Screen::Loading => Box::new(loading_screen::build_screen()),
+    Screen::Main => Box::new(main_screen::build_screen()),
+    Screen::TeamScreen { team_id } => {
+        Box::new(with_navbar(team_screen::build_screen(team_id)))
+    }
     ...
     Screen::RaceScheduleScreen => {
         Box::new(with_navbar(race_schedule_screen::build_screen()))

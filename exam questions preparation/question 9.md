@@ -12,6 +12,7 @@ What challenges did you encounter while implementing concurrency, and how did Ru
 - Mutex og Arc er brugt til at dele data mellem tråde, mens Atomic types som AtomicU16 og AtomicBool bliver brugt til at sikre at data kan ændres sikkert uden at bruge locks.
 - Hvis flere tråder venter på hinanden for at release en lock, kan det føre til deadlocks. Det er vigtigt at designe tråd-sikker kode for at undgå dette, fordi Rust ikke undgår deadlocks automatisk.
 - Hvis en tråd bliver paniced mens den holder på en lock, så vil det sige at Mutex bliver "poisoned", og det vil sige at andre tråde ikke kan få adgang til den lock før den bliver "unpoisoned". Det er vigtigt at håndtere dette i din kode for at undgå at programmet crasher.
+- Rust har også `std::thread::scope` hvilket sikrer, at trådene afsluttes, før de går ud af scope, hvilket forhindrer visse typer af fejl.
 
 ### Compared to other languages
 
@@ -21,17 +22,27 @@ Det vil sige at Rust's tilgang er mere sikker, men kompleks, mens Java og C# er 
 
 ### My view
 
+Vi havde ikke særligt meget concurrency i vores projekt, så vi stødte ikke på mange problemer. En ting vi dog stødte på og var en grund til vi skiftede over til concurrency var, at når vi skulle downloade billeder fra GitHub, så tog det lang tid, og det gjorde der gik noget tid før vores applikation startede op. Det 'fiksede' vi med at tilføje en loading screen, og så køre downloads i baggrunden (i en ny thread), mens vi viser loading screenen. Samt vi brugte Rayon til at parallelisere downloads, så de kunne ske hurtigere.
+
 ## Code Snippets
 
 1. Vi bruger Mutex til at sikre at kun én tråd kan få adgang til database connectionen ad gangen.
 
-`src/database/connection.rs` : linje 7
+`src/database/connection.rs` : linje 7 og 25-28
 
 ```rust
 static CONNECTION: Mutex<Option<Connection>> = Mutex::new(None);
 ```
 
-.. TILFØJ DET MED LOCKED CONNECTION i get_connection
+```rust
+pub fn get_connection() -> Result<ConnectionGuard, String> {
+    let mut conn_guard = CONNECTION
+        .lock()
+        .map_err(|_| "Failed to lock connection mutex".to_string())?;
+
+    ...
+}
+```
 
 2. AtomicU16 for GameNumber til at sikre at kun én tråd kan ændre værdien ad gangen.
 

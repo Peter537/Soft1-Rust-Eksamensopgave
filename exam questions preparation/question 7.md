@@ -89,4 +89,31 @@ const TEAMS: [&str; 10] = [
 ];
 ```
 
+5. Vi bruger `impl` til at tilføje en `lifecycle` metode til vores Struct, fordi det skal fungere som en controller til vores Druid UI's loading screen
+
+`src/ui/loading_screen.rs` : linje 9 - 41
+
+```rust
+pub fn build_screen() -> impl Widget<AppState> {
+    Flex::column()
+        ...
+        .controller(LoadingController)
+}
+
+struct LoadingController;
+
+impl<W: Widget<AppState>> Controller<AppState, W> for LoadingController {
+    fn lifecycle(
+        &mut self,
+        child: &mut W,
+        ctx: &mut LifeCycleCtx,
+        event: &LifeCycle,
+        data: &AppState,
+        env: &Env,
+    ) {
+        ...
+    }
+}
+```
+
 ## Other examples
