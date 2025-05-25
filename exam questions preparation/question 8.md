@@ -12,10 +12,18 @@ Explain your use of pub, mod, and other visibility qualifiers to manage encapsul
 - Man bruger `pub` til at kontrollere synligheden af hvad man vil have skal blive vist til offentligheden.
 - Når alt bliver privat fra starten, så gør det man kommer til at tænke mere over strukturen af ens kode ift. hvad der skal være offentligt og hvad der ikke skal.
 - Man kan bruge `super` til at gå op til parent modulet
+- `mod` er entry-punktet for et modul (en folder med en `mod.rs` fil)
 
 ### Compared to other languages
 
-I Java og C# er ting public by default.
+I Java der er super en reference til klassen man extender fra, hvor i Rust er super en reference til parent modulet.
+
+I Java er ting package-private by default. I Java er der fire synlighedsniveauer:
+
+- `public`: Tilgængelig overalt.
+- `protected`: Tilgængelig inden for samme package og i subklasser (også i andre packages).
+- `package-private`: Tilgængelig kun inden for samme package.
+- `private`: Tilgængelig kun inden for samme klasse.
 
 ### My view
 

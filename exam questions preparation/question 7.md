@@ -21,7 +21,7 @@ Discuss any instances where you used the derive attribute with structs or used i
 
 ### Compared to other languages
 
-Man kan vel lidt sammenligne en struct i Rust med en record i Java ift. det bare er til at præsentere data, og man så gør det til en klasse ligesom i Java ved at tilføje metoder til den.
+Man kan vel lidt sammenligne en struct i Rust med en record i Java ift. det bare er til at præsentere data, og man så gør det til en klasse ligesom i Java ved at tilføje metoder til den. Selvfølgelig i Rust kan man dog godt ændre på dataen i en Struct, hvorimod i Java er det en record, så den er immutable.
 
 I C# kan man navngive felter i tuples, så de er mere læselige end Rusts tuples.
 

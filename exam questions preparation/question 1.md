@@ -19,7 +19,7 @@ For at lave Error Propagation ligesom vores `download_file` i Java, så ville ma
 
 I Java, der er en `Optional` klasse som er meget ligesom Rusts `Option` enum.
 
-Sprog som Python er meget mere lenient omkring error handling, så man skal være meget omhyggelig med at håndtere fejl, ellers kan de ske under runtime og gøre at programmet crasher.
+Sprog som Python er meget mere tilgivende omkring error handling, så man skal være meget omhyggelig med at håndtere fejl, ellers kan de ske under runtime og gøre at programmet crasher.
 
 ### My view
 
@@ -58,6 +58,8 @@ pub fn get_driver_by_id(id: &u16) -> Option<Driver> {
 
 3. Viser hvordan man konverterer et Result fra en Mutex lock til en custom error
 
+Som sådan, så burde vi ikke have brugt Mutex til CONNECTION fordi alt med DB er single-threaded, men hvis nu at det havde været multi-threaded, så kunne vi have brugt {}-scopes bedre inde i vores database metoder for at få connection til at gå ud af scope hurtigere. Når connetion går ud af scope, så bliver Mutex låsen automatisk frigivet.
+
 `/src/database/connection.rs` : linje 26 - 28
 
 ```rust
@@ -66,7 +68,7 @@ let mut conn_guard = CONNECTION
     .map_err(|_| "Failed to lock connection mutex".to_string())?;
 ```
 
-4. Her hvis en column ikke findes i databasen ift. Ok(Circuit), så bliver der error håndteret med Option, fordi Row er en Result type.
+4. Her hvis en column ikke findes i databasen ift. Ok(Circuit), så bliver der error håndteret med Option, fordi Row er en Result type. Vi bruger `?` for error propagation
 
 `src/database/circuit.rs` : linje 4 - 23
 

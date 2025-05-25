@@ -38,7 +38,9 @@ const REPO: &str = "https://raw.githubusercontent.com/Peter537/Soft1-Rust-Eksame
 
 \*Det er vigtigt at bemærke, selvom vi kun har sat den til at være en `&str`, så er den stadig en `&'static str`, fordi den er defineret som en konstant og derfor ikke kan ændres i løbet af programmet.
 
-2. Vi bruger String i structs for data som bliver loaded i runtime og kan ændres, og længden af Stringen er ikke pre-defineret. Hvis `&str` så skulle man have defineret en lifetime på Driver, men det ved vi ikke rigtig, så derfor bruger vi `String` i stedet for `&str` fordi den har sin egen lifetime.
+2. Vi bruger String i structs for data som bliver loaded i runtime og kan ændres, og længden af Stringen er ikke pre-defineret. Hvis `&str` så skulle man have defineret en lifetime på dataen Driver henter fra, men det er svært fordi vi henter dataen fra database metoder, så hvis man skulle have en `&str` reference til dataen, så skulle den have en lifetime som er længere end Driver structens livscyklus, hvilket er svært at garantere. Det er derfor `&str` ikke kan bruges her, fordi det ville kræve at vi skulle have en reference til dataen som lever længere end Driver structen, og det er bare
+
+Det er smart at bruge `String` i structs her fordi selv hvis Driver bliver ændret hvem der er owner af data, så vil det ikke påvirke variablerne i structen, fordi de stadig bare er tilknyttet af driverens livscyklus.
 
 `/src/model/driver.rs` : linje 1 - 10
 

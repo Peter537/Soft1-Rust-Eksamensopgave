@@ -12,10 +12,21 @@ Include examples of how you used Box, Rc, or RefCell in managing heap data.
 - Smart pointers som `Box`, `Rc`, `Arc` og `Mutex` bliver brugt til heap-allokeret data og shared ownership.
 - Heap allocation sker til store og rekursive data strukturer. Stack allocation er hurtigere og bruges til små data strukturer.
 - `Box` bruges til heap-allokeret data med single ownership. Det der sker med Box er at den bare laver plads i heapen, og så kan man putte data ind i den, så man er ikke begrænset af plads, fx hvis vi laver som i vores UI, hvor vi har forskellige screens som kan have forskellige størrelser.
+- Man vil ikke normalt selv gå ind og free memory, det er noget Rust håndterer automatisk for os, så vi skal stole på at Rusts compiler og runtime håndterer hukommelsen korrekt.
+
+Almindelige smart pointers i Rust:
+
+- `Box`: Enkelt ejerskab, heap-allokering, automatisk oprydning (bruges fx til store datastrukturer som UI-screens).
+- `Rc`: Reference counting til delt ejerskab i single-threaded kode.
+- `Arc`: Som Rc, men trådsikker til delt ejerskab på tværs af tråde.
+- `Mutex`: Trådsikker delt adgang med låsning, som i CONNECTION-eksemplet.
+- `RefCell`: Muliggør ændringer af data (interior mutability) i single-threaded kode med runtime-tjek af lån.
 
 ### Compared to other languages
 
 Det er ikke nødvendigt at bruge `delete` som i C++ eller `Dispose` i C#, eller Garbage Collector som i Java / C#.
+
+Java har ikke noget ligesom en slags `Box` smart pointer, det er Garbage Collector der holder styr på hukommelsen. C++ har `std::unique_ptr` som er en smart pointer der holder styr på hukommelsen og frigiver den automatisk når den går ud af scope.
 
 ### My view
 

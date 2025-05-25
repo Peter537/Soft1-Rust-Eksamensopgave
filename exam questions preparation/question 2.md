@@ -17,7 +17,9 @@ Provide examples of how managing ownership and borrowing helped improve your cod
 
 ### Compared to other languages
 
-Det betyder man ikke behøver have en Garbage Collector, som i Java og C#, så der er ikke noget Runtime overhead.
+Det betyder man ikke behøver have en Garbage Collector, som i Java og C#, så der er ikke noget Runtime overhead. Man skal heller ikke sørge for selv at frigive hukommelse, som i C/C++.
+
+Hvis man kører multi-threaded kode, så sikrer man sig stadig at ens variabler har de værdier som de skal have, hvor sprog som JavaScript og Python kan have problemer med det, fordi de ikke har et striks ownership system.
 
 ### My view
 

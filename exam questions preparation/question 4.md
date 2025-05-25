@@ -14,6 +14,7 @@ How did this design choice benefit your project? How is the problem of inheritan
 - Rust bruger traits og komposition for at undgå diamond problem og inheritance problemer.
 - Med komposition gør det når man ændre et sted, så ændre det ikke i de andre steder, så det er godt for maintainability.
 - Det er også godt for fleksibilitet fordi man kan mix og matche forskellige komponenter uden at skulle ændre i en base klasse.
+- Der bliver brugt enums som Option og Result for at håndtere polymorfisme
 
 ### Compared to other languages
 
@@ -22,6 +23,8 @@ Java undgår diamond problemet ved at man kun kan arve fra én klasse
 ### My view
 
 Jeg kan personligt bedre lide OOP, jeg kan ikke lide det med at man skal tilføje metoder til structs for at få dem til at virke, det er ikke så intuitivt som inheritance
+
+Synes det havde været nemmere at forstå hvis nu man havde haft en Screen klasse i Java som alle screens ville extende fra, og så kunne man nemmere se det var en Screen, i stedet for her er det bare en Enum, og så skal man vide nede i en metode på pattern matching at det er en Screen.
 
 ## Code Snippets
 
@@ -58,6 +61,8 @@ pub fn build_screen() -> impl Widget<AppState> {
 ```
 
 3. Vi undgår inheritance ved at bruge Composition til de sider der skal have en navbar.
+
+Det med at vi har `'static` her er at vi kræver der ikke er noget fra `inner` må have noget som lever længere end `with_navbar`, altså at det kan gå out-of-scope.
 
 `src/ui/mod.rs` : linje 71 - 76 og 81 - 83
 
