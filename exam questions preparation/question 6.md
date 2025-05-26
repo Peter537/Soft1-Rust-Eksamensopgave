@@ -9,28 +9,30 @@ What do you think of the pattern matching instead of using switch type statement
 
 ## How it's done in Rust
 
-- Pattern matching er mere læseligt end switch statements, og det er nemmere at håndtere flere cases på en gang.
-  - Pattern matching gør så man skal håndtere alle mulige cases, hvor i andre sprog med switch-cases kan man godt undlade at håndtere en case.
-  - Man kan destructure data inde i pattern matching
-  - Man kan match guard i pattern matching, ex noget skal ske hvis en værdi er større end 0, og noget andet skal ske hvis den er mindre end 0.
-- Ved at bruge `match`, så kan Rusts compiler optimere udtrykkene ved at lave fx jump tables eller andre optimeringer, så det er hurtigere end at bruge if-else statements.
+- Pattern matching is more readable than switch statements and makes it easier to handle multiple cases at once.
+    - Pattern matching requires you to handle all possible cases, whereas switch statements in other languages may allow you to skip cases.
+    - You can destructure data directly within pattern matching.
+    - Match guards let you add conditions to patterns, e.g., perform one action if a value is greater than 0 and another if it is less.
+- Using `match` allows the Rust compiler to optimize control flow, for example by generating jump tables, making it faster than using if-else chains.
 
 ### Compared to other languages
 
-Andre sprog som Java og C# har switch statements, men de er ikke så fleksible som Rusts pattern matching, ex. de kan ikke destructure data eller have match guards.
+In languages like Java, C#, or JavaScript, switch statements are often used for control flow. However, they have limitations:
+- They do not allow destructuring of data.
+- They do not support match guards, which can lead to more verbose and less readable code.
+- Switch statements can lead to fall-through behavior, where cases are not explicitly handled, potentially causing bugs.
 
 ### My view
 
-Jeg kan godt lide den måde med at man kan både destructure data og have match guards i pattern matching, det gør det mere læseligt og nemmere at håndtere flere cases på en gang. Jeg synes også det er bedre end switch statements, fordi det er mere fleksibelt og kan håndtere flere forskellige typer data.
+I find Rust's pattern matching to be a powerful and expressive feature that enhances code readability and maintainability. It allows for clear handling of different cases, especially when dealing with enums or complex data structures. The ability to destructure data directly in the match arms makes it easier to work with nested data without additional boilerplate code.
 
 ## Code Snippets
 
-1. Vi bruger pattern-matching på Screen-enum til at håndtere hvilken skærm skal vises i UI.
+1. We use pattern matching on the `Screen` enum to handle which screen should be displayed in the UI.
 
-Her bruger vi også destructuring af data i pattern matching, fordi vi gerne vil have fx. hvilket team_id der skal vises i team screen.
+Here we also use destructuring of data in pattern matching, because we want to extract, for example, which `team_id` should be shown in the team screen.
 
-`src/ui/mod.rs` : linje 78 - 100
-
+File: [`src/ui/mod.rs`](../src/ui/mod.rs)
 ```rust
 match screen {
     Screen::Loading => Box::new(loading_screen::build_screen()),
@@ -45,21 +47,18 @@ match screen {
 }
 ```
 
-2. Vi bruger match på en row i database metoderne til at håndtere om vi fik en Ok eller Err værdi.
+2. We use `match` on a row in the database methods to handle whether we received an `Ok` or `Err` value.
 
-`src/database/driver.rs` : linje 23-26
-
+File: [`src/database/driver.rs`](../src/database/driver.rs)
 ```rust
 match row {
     Ok(driver) => Some(driver),
     Err(_) => None,
 }
 ```
+3. We use pattern matching when there may not be data in the database to display in the UI.
 
-3. Vi bruger pattern-matching hvis der muligvis ikke er data i databasen hvor det skal vises i UI.
-
-`src/ui/main_game_screen.rs` : linje 37 - 42
-
+File: [`src/ui/main_game_screen.rs`] (lines 37-42)
 ```rust
 let next_race_day: String = match get_next_race() {
     Some(race) => NaiveDate::parse_from_str(&race.date, "%Y-%m-%d")
@@ -69,9 +68,9 @@ let next_race_day: String = match get_next_race() {
 };
 ```
 
-4. Vi bruger `if-let` til at vise en label i UI hvis der er valgt et team.
+4. We use `if let` to show a label in the UI if a team is selected.
 
-Det er noget som er smartere at gøre hvis man kun vil have der skal ske noget hvis én værdi skal gøres noget ved, så her ville det have været smartere at bruge `match` fordi alle cases skal håndteres.
+This is useful when you only care about one case. If you need to handle all cases, `match` is better.
 
 ```rust
 let selected_team_label = Label::<AppState>::new(|data: &AppState, _env: &Env| {
@@ -85,7 +84,7 @@ let selected_team_label = Label::<AppState>::new(|data: &AppState, _env: &Env| {
 
 ## Other examples
 
-- Ekstra eksempel på pattern matching ift error handling:
+- Example of pattern matching for error handling:
 
 ```rust
 fn divide(a: f64, b: f64) -> Result<f64, &'static str> {
@@ -104,7 +103,7 @@ fn main() {
 }
 ```
 
-- Eksempel på destructuring data i pattern matching:
+- Example of destructuring data in pattern matching:
 
 ```rust
 enum Message {
@@ -122,7 +121,7 @@ fn process_message(msg: Message) {
 }
 ```
 
-- Eksempel på pattern matching med match guard:
+- Example of pattern matching with a match guard:
 
 ```rust
 let number = Some(4);

@@ -8,32 +8,27 @@ Discuss any instances where you used the derive attribute with structs or used i
 
 ## How it's done in Rust
 
-- Ved at have Derive attributen gør det at vi får mindre boilerplate kode og det er nemmere at ændre structs i fremtiden.
-- Structs er mere læselige og nemmere at forstå end tuples og arrays når det skal bruges til komplekse data strukturer, hvor tuples og arrays er bedre til simple data strukturer fordi de er hurtigere at skrive og mere kompakte.
-- Structs er custom data typer hvor man kan navngive flere relaterede felter.
-  - Det er godt at bruge structs når man vil gruppere relaterede data sammen og give dem meningsfulde navne. Man vil have metoder/traits for at give dem adfærd. Man vil have selvdokumenterende kode.
-- Tuples er en samling af værdier af forskellige typer, og de kan bruges til at repræsentere en enkelt værdi med flere komponenter.
-  - Tuples er gode til at repræsentere en enkelt værdi med flere komponenter, og de er hurtigere at skrive end structs. De er også gode til at returnere flere værdier fra en funktion.
-- Arrays er en samling af værdier af samme type, og de kan bruges til at repræsentere en liste af værdier.
-  - Arrays er gode til at repræsentere en liste af værdier af samme type, og de er hurtigere at skrive end structs. De er også gode til at repræsentere en fast størrelse liste af værdier.
-  - Det er også godt at bruge hvis man skal bruge indexing.
-- Impl er en måde at tilføje metoder og funktioner til structs
+- Using the `derive` attribute reduces boilerplate and makes it easier to update structs in the future.
+- Structs are more readable and better for organizing complex data, as they allow you to name related fields and add behavior with methods or traits. They help create self-documenting code.
+- Tuples group values of different types and are useful for representing a single value with multiple components, or for returning multiple values from a function.
+- Arrays store values of the same type and are ideal for fixed-size lists or when you need indexing.
+- `impl` is used to add methods and functionality to structs.
 
 ### Compared to other languages
+You can compare a struct in Rust to a record in Java, as both are primarily used to represent data. However, in Rust, structs are mutable by default, whereas Java records are immutable. When you add methods to a struct in Rust using `impl`, it becomes more like a class in Java or C#, allowing you to encapsulate both data and behavior.
 
-Man kan vel lidt sammenligne en struct i Rust med en record i Java ift. det bare er til at præsentere data, og man så gør det til en klasse ligesom i Java ved at tilføje metoder til den. Selvfølgelig i Rust kan man dog godt ændre på dataen i en Struct, hvorimod i Java er det en record, så den er immutable.
-
-I C# kan man navngive felter i tuples, så de er mere læselige end Rusts tuples.
+- In languages like C# or Java, tuples are often used for simple data grouping, but they lack named fields, making them less readable compared to Rust's tuples with named fields.
 
 ### My view
 
-Jeg kan meget godt lide i C# at man kan navngive felter i tuples, det gør dem mere læselige.
+I find that using structs in Rust allows for better organization and clarity in my code. They provide a way to encapsulate related data and behavior, making it easier to understand the purpose of each component. Tuples are useful for simple groupings, but I prefer structs when I need to represent more complex entities with multiple attributes.
 
+We use tuples mainly for quickly displaying a group of values without needing to define a full struct, such as when calculating total times for drivers
 ## Code Snippets
 
-1. Model-Structs bruges til at repræsentere komplekse entiteter i vores applikation
+1. **Model structs represent complex entities in our application**
 
-`src/model/driver.rs` : linje 1 - 10
+`src/model/driver.rs` : lines 1–10
 
 ```rust
 pub struct Driver {
@@ -42,12 +37,13 @@ pub struct Driver {
     pub image_path: String,
 }
 ```
+We use structs like `Driver` to group related fields, making the code more readable and maintainable.
 
-2. Vi brugte Arrays og Tuples til at repræsentere simple data strukturer, som f.eks. en liste af værdier eller en samling af værdier.
+2. **Arrays and tuples for simple data structures**
 
-`src/database/race.rs` : linje 48 - 56
+`src/database/race.rs` : lines 48–56
 
-Her samler vi data `(u16, f32)` med et driver_id og en lap tid
+Here, we use tuples `(u16, f32)` to pair a driver ID with a lap time.
 
 ```rust
 fn calculate_driver_total_times(driver_lap_times: &[(u16, Vec<f32>)]) -> Vec<(u16, f32)> {
@@ -60,10 +56,11 @@ fn calculate_driver_total_times(driver_lap_times: &[(u16, Vec<f32>)]) -> Vec<(u1
     driver_total_times
 }
 ```
+Tuples and arrays are ideal for grouping simple values or fixed-size collections.
 
-3. Vi bruger Derive attribute til at generere standard implementeringer for vores structs
+3. **Using the `derive` attribute for standard trait implementations**
 
-`src/ui/mod.rs` : linje 29 - 37
+`src/ui/mod.rs` : lines 29–37
 
 ```rust
 #[derive(Clone, Data, Lens)]
@@ -76,10 +73,11 @@ pub struct AppState {
     pub show_modal: bool,
 }
 ```
+The `derive` attribute automatically implements common traits, reducing boilerplate and making structs easier to use.
 
-4. Vi bruger array til at præsentere en liste af billeder der skal downloades
+4. **Arrays for fixed lists**
 
-`src/util/appdata.rs` : linje 115 - 126
+`src/util/appdata.rs` : lines 115–126
 
 ```rust
 const TEAMS: [&str; 10] = [
@@ -88,10 +86,11 @@ const TEAMS: [&str; 10] = [
     "williams.png",
 ];
 ```
+Arrays are used for fixed-size lists, such as a set of team image filenames.
 
-5. Vi bruger `impl` til at tilføje en `lifecycle` metode til vores Struct, fordi det skal fungere som en controller til vores Druid UI's loading screen
+5. **Adding behavior to structs with `impl`**
 
-`src/ui/loading_screen.rs` : linje 9 - 41
+`src/ui/loading_screen.rs` : lines 9–41
 
 ```rust
 pub fn build_screen() -> impl Widget<AppState> {
@@ -115,5 +114,5 @@ impl<W: Widget<AppState>> Controller<AppState, W> for LoadingController {
     }
 }
 ```
+We use `impl` to add methods and behavior to structs, such as implementing controller logic for UI components.
 
-## Other examples

@@ -4,149 +4,104 @@ Polymorphism: Traits and Enums in Rust allow for polymorphism.
 Can you discuss a place in your project where you implemented polymorphic behavior?
 How did this design choice benefit your project? How is the problem of inheritance avoided in Rust? (think about composition - use of structs and impl functions)
 
-## Links
-
-- https://medium.com/@ksandeeptech07/diamond-problem-in-oop-explained-672d136912c8
 
 ## How it's done in Rust
 
-- Det er ikke muligt at have inheritance i Rust.
-- Rust bruger traits og komposition for at undgå diamond problem og inheritance problemer.
-- Med komposition gør det når man ændre et sted, så ændre det ikke i de andre steder, så det er godt for maintainability.
-- Det er også godt for fleksibilitet fordi man kan mix og matche forskellige komponenter uden at skulle ændre i en base klasse.
-- Det er smartere at bruge Enums i tilfælde hvor mange kender alle mulige værdier ved compile time
-- Det er bedre at bruge Traits i tilfælde hvor nye implementeringer kan tilføjes senere, uden man skal ændre i eksisterende kode. -- De fungerer lidt ligesom interfaces i Java.
-- Der bliver brugt enums som Option og Result for at håndtere polymorfisme
+- Rust does not support inheritance.
+- Rust values composition over inheirtance.
+- Composition improves maintainability and flexibility, as changes in one component do not affect others, and components can be mixed and matched without a base class.
+- Enums are best when all possible variants are known at compile time.
+- Traits are preferable when new implementations may be added later, similar to interfaces in Java.
+- Enums like `Option` and `Result` are used for polymorphism in Rust.
 
 ### Compared to other languages
 
-Java undgår diamond problemet ved at man kun kan arve fra én klasse
+Java is a class-based language that uses inheritance to achieve polymorphism, allowing classes to extend other classes and implement interfaces. This can lead to complex hierarchies and tight coupling between components; and furthermore make relationships between components very explicit.
+
+- Rust, on the other hand, uses enums and traits to achieve polymorphism without inheritance.
+> Rust focuses on composition and traits, and not relationships and inheritance.
 
 ### My view
 
-Jeg kan personligt bedre lide OOP, jeg kan ikke lide det med at man skal tilføje metoder til structs for at få dem til at virke, det er ikke så intuitivt som inheritance
-
-Synes det havde været nemmere at forstå hvis nu man havde haft en Screen klasse i Java som alle screens ville extende fra, og så kunne man nemmere se det var en Screen, i stedet for her er det bare en Enum, og så skal man vide nede i en metode på pattern matching at det er en Screen.
+- Personally, I prefer the structure of objects in class-based inheritance systems like Java.
+- Class inheritance makes relationships between components explicit and easy to understand—e.g., a `Screen` class extended by subscreens like `LoadingScreen`, `MainScreen`, etc.
+- With Rust's enum and composition-based design, it works, but feels less intuitive and sometimes fragile, since relationships are not as clearly expressed.
+- For example, I can't immediately tell that a `build_screen` function in `loading_screen.rs` represents a screen until I see it used in the `Screen` enum in `mod.rs`.
+- In Java, the inheritance signature directly shows what something is, making the codebase easier to navigate and reason about.
 
 ## Code Snippets
 
-1. Vi bruger Enums til at repræsentere forskellige skærme i vores UI, og så bruger vi pattern-matching til at håndtere dem.
+1. **Enums for UI Screens**  
+    Enums represent different screens in the UI, enabling compile-time knowledge of all variants. Pattern matching is used to handle each screen.
 
-Her er det kendt på compile tid hvilke screens der er, så det er bedre at bruge Enums i stedet for Traits.
-
-`src/ui/mod.rs` : linje 40 - 52 og linje 78 - 100
-
-```rust
-pub enum Screen {
-    Loading,
-    ...
-    RaceScheduleScreen,
-}
-```
-
-```rust
-match screen {
-    Screen::Loading => Box::new(loading_screen::build_screen()),
-    ...
-    Screen::RaceScheduleScreen => {
-        Box::new(with_navbar(race_schedule_screen::build_screen()))
-    }
-}
-```
-
-2. Alle UI builder functions returnerer en `impl Widget<AppState>` type, hvilket gør det muligt at bruge polymorfisme til at håndtere forskellige UI komponenter.
-
-`src/ui/main_screen.rs` : linje 10
-
-```rust
-pub fn build_screen() -> impl Widget<AppState> {
-    ...
-}
-```
-
-3. Vi undgår inheritance ved at bruge Composition til de sider der skal have en navbar.
-
-Det med at vi har `'static` her er at vi kræver der ikke er noget fra `inner` må have noget som lever længere end `with_navbar`, altså at det kan gå out-of-scope.
-
-`src/ui/mod.rs` : linje 71 - 76 og 81 - 83
-
-```rust
-fn with_navbar(inner: impl Widget<AppState> + 'static) -> impl Widget<AppState> {
-    Flex::column()
-        .with_child(build_navbar())
-        .with_spacer(10.0)
-        .with_flex_child(inner, 1.0)
-}
-```
-
-```rust
-Screen::TeamScreen { team_id } => {
-    Box::new(with_navbar(team_screen::build_screen(team_id)))
-}
-```
-
-4. Eksempel med Option og Result for at håndtere polymorfisme med Connection
-
-Vi starter med at sætte en connection til None hvor vi bruger den som optional, fordi så kan vi så have når get_connection bliver kaldt, så kan vi tjekke om der allerede er en connection, og hvis ikke så opretter vi en ny.
-
-Vi returnerer en Result for at håndtere fejl, hvis der ikke er et spil nummer eller hvis der er en fejl i at åbne databasen.
-
-`src/database/connection.rs` : linje 7 og 25 - 45
-
-```rust
-static CONNECTION: Mutex<Option<Connection>> = Mutex::new(None);
-
-...
-
-pub fn get_connection() -> Result<ConnectionGuard, String> {
-    let mut conn_guard = CONNECTION
-        .lock()
-        .map_err(|_| "Failed to lock connection mutex".to_string())?;
-
-    let game_number = super::GAME_NUMBER.load(Ordering::SeqCst);
-    if game_number == 0 {
-        return Err("Game number is not set".to_string());
+    ```rust
+    pub enum Screen {
+         Loading,
+         // ...
+         RaceScheduleScreen,
     }
 
-    if conn_guard.is_none() {
-        let db_file = format!("Career_{}.db", game_number);
-        let db_path = get_game_saves_path().join(db_file);
-        let conn =
-            Connection::open(db_path).map_err(|e| format!("Failed to open database: {}", e))?;
+    match screen {
+         Screen::Loading => Box::new(loading_screen::build_screen()),
+         // ...
+         Screen::RaceScheduleScreen => {
+              Box::new(with_navbar(race_schedule_screen::build_screen()))
+         }
+    }
+    ```
 
-        *conn_guard = Some(conn);
+2. **Trait Objects for Polymorphic Widgets**  
+    All UI builder functions return `impl Widget<AppState>`, allowing different UI components to be handled polymorphically. The use of `dyn` in `ViewSwitcher` enables returning different widget types at runtime.
+
+    ```rust
+    pub fn build_screen() -> impl Widget<AppState> {
+         // ...
     }
 
-    Ok(ConnectionGuard(conn_guard))
-}
-```
+    pub fn build_ui() -> impl druid::Widget<AppState> {
+         ViewSwitcher::new(
+              |data: &AppState, _env| (data.current_screen.clone(), data.game_number.clone()),
+              |(screen, _game_number), _data, _env| -> Box<dyn druid::Widget<AppState>> {
+                    match screen {
+                         Screen::Loading => Box::new(loading_screen::build_screen()),
+                         // ...
+                         Screen::RaceScheduleScreen => {
+                              Box::new(with_navbar(race_schedule_screen::build_screen()))
+                         }
+                    }
+              },
+         )
+    }
+    ```
 
-5. Vi bruger `dyn` i ViewSwitcher fordi vi gerne vil have en trait object, som kan repræsentere forskellige typer af widgets, der implementerer `Widget<AppState>`. Dette gør det muligt at returnere forskellige UI komponenter fra vores `build_ui` funktion.
+3. **Composition Instead of Inheritance**  
+    Composition is used to add shared UI elements, such as a navbar, to screens. This avoids inheritance and keeps components modular.
 
-`src/ui/mod.rs` : linje 67 - 103
+    ```rust
+    fn with_navbar(inner: impl Widget<AppState> + 'static) -> impl Widget<AppState> {
+         Flex::column()
+              .with_child(build_navbar())
+              .with_spacer(10.0)
+              .with_flex_child(inner, 1.0)
+    }
+    ```
 
-```rust
-pub fn build_ui() -> impl druid::Widget<AppState> {
-    ViewSwitcher::new(
-        |data: &AppState, _env| (data.current_screen.clone(), data.game_number.clone()),
-        |(screen, _game_number), _data, _env| -> Box<dyn druid::Widget<AppState>> {
-            ...
+4. **Option and Result for Flexible State Handling**  
+    `Option` and `Result` are used to manage state and error handling, such as for database connections.
 
-            match screen {
-                Screen::Loading => Box::new(loading_screen::build_screen()),
-                ...
-                Screen::RaceScheduleScreen => {
-                    Box::new(with_navbar(race_schedule_screen::build_screen()))
-                }
-            }
-        },
-    )
-}
-```
+    ```rust
+    static CONNECTION: Mutex<Option<Connection>> = Mutex::new(None);
+
+    pub fn get_connection() -> Result<ConnectionGuard, String> {
+         // ...
+    }
+    ```
+
+These patterns demonstrate how Rust achieves polymorphism and flexible design without inheritance.
 
 ## Other examples
 
-- Eksempel på Komposition i Rust:
+- ### Example of using Structs and Methods for composition similar to inheritance in Java:
 
 ```rust
 struct Engine {
@@ -172,36 +127,7 @@ impl Car {
 }
 ```
 
-- Traits er lidt ligesom interfaces i fx Java, det kan indeholde metoder og kan implementeres af structs.
-
-```rust
-trait Drawable {
-    fn draw(&self);
-}
-
-struct Circle;
-struct Square;
-
-impl Drawable for Circle {
-    fn draw(&self) {
-        println!("Drawing a circle");
-    }
-}
-
-impl Drawable for Square {
-    fn draw(&self) {
-        println!("Drawing a square");
-    }
-}
-
-... // og så kan man:
-
-fn render(shape: &dyn Drawable) {
-    shape.draw();
-}
-```
-
-- Ligesom med Structs, så kan enums også have metoder og implementere traits.
+### Example of using Enums and Traits for polymorphism similar to inheritance in Java:
 
 ```rust
 enum Shape {
@@ -219,46 +145,6 @@ impl Drawable for Shape {
             Shape::Circle => println!("Drawing a circle"),
             Shape::Square => println!("Drawing a square"),
         }
-    }
-}
-```
-
-- Applikations eksempel hvor man skal sende forskellige typer notifikationer:
-
-Det her benytter også Open/Closed princip
-
-```rust
-trait Notifier {
-    fn send(&self, message: &str);
-}
-
-struct Email;
-struct SMS;
-struct Push;
-
-impl Notifier for Email {
-    fn send(&self, message: &str) {
-        println!("Sending Email: {}", message);
-    }
-}
-
-impl Notifier for SMS {
-    fn send(&self, message: &str) {
-        println!("Sending SMS: {}", message);
-    }
-}
-
-impl Notifier for Push {
-    fn send(&self, message: &str) {
-        println!("Sending Push Notification: {}", message);
-    }
-}
-
-... // og så kan man:
-
-fn notify_all(notifiers: Vec<&dyn Notifier>, message: &str) {
-    for notifier in notifiers {
-        notifier.send(message);
     }
 }
 ```

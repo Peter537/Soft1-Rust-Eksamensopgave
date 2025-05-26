@@ -8,21 +8,44 @@ What challenges did you encounter while implementing concurrency, and how did Ru
 
 ## How it's done in Rust
 
-- Rust's ownership model og borrowing rules hjælper med at undgå data races og sikre thread safety.
-- Mutex og Arc er brugt til at dele data mellem tråde, mens Atomic types som AtomicU16 og AtomicBool bliver brugt til at sikre at data kan ændres sikkert uden at bruge locks.
-- Hvis flere tråder venter på hinanden for at release en lock, kan det føre til deadlocks. Det er vigtigt at designe tråd-sikker kode for at undgå dette, fordi Rust ikke undgår deadlocks automatisk.
-- Hvis en tråd bliver paniced mens den holder på en lock, så vil det sige at Mutex bliver "poisoned", og det vil sige at andre tråde ikke kan få adgang til den lock før den bliver "unpoisoned". Det er vigtigt at håndtere dette i din kode for at undgå at programmet crasher.
-- Rust har også `std::thread::scope` hvilket sikrer, at trådene afsluttes, før de går ud af scope, hvilket forhindrer visse typer af fejl.
+- Rust’s ownership and borrowing rules prevent data races and ensure thread safety at compile time.
+- `Mutex` and `Arc` are used to safely share and mutate data across threads; atomic types like `AtomicU16` allow lock-free, thread-safe updates.
+- Deadlocks can occur if threads wait on each other’s locks—Rust enforces safety but does not prevent deadlocks, so careful design is needed.
+- If a thread panics while holding a `Mutex`, the lock becomes “poisoned”; handling this is essential to avoid crashes.
+- `std::thread::scope` ensures all spawned threads complete before exiting scope, preventing certain concurrency bugs.
+
+---
+
+- `Rc<T>`: Single-threaded reference counting for shared ownership.
+- `Arc<T>`: Thread-safe reference counting for sharing data between threads.
+- `Mutex<T>`: Ensures only one thread accesses data at a time.
+- `RefCell<T>`: Allows interior mutability in single-threaded contexts.
 
 ### Compared to other languages
 
-Sprog som Java og C# er lidt ligesom Rust med deres udfordringer i deadlocks, men hvis en tråd har en unormal trådafslutning, så vil Rust have man selv laver explicit fejlhåndtering, hvorimod Java og C# automatisk frigiver låsen og overlader datakonsistent til programmøren.
 
-Det vil sige at Rust's tilgang er mere sikker, men kompleks, mens Java og C# er simplere, men kræver ekstra opmærksomhed på data.
+- **Python:**
+    - Concurrency via `threading`, `multiprocessing`, and `asyncio`.
+    - GIL prevents true parallelism for CPU-bound tasks; threads mainly for I/O.
+    - Shared data needs manual locking (`threading.Lock`); no compile-time safety.
+    - Data races and subtle bugs possible; issues found at runtime.
+
+- **Java:**
+    - Native thread support (`Thread`, `Runnable`), synchronization (`synchronized`, `ReentrantLock`, `AtomicInteger`).
+    - Memory model and GC help, but thread safety is developer's responsibility.
+    - Higher-level tools: `ExecutorService`, `CompletableFuture`.
+    - Concurrency bugs (data races, deadlocks) possible; detected at runtime.
+
+- **Rust:**
+    - Enforces thread safety at compile time via ownership and borrowing.
+    - `Arc<T>`, `Mutex<T>` require `Send`/`Sync` traits for thread sharing.
+    - Many concurrency bugs prevented before running code.
+    - More effort up front, but safer and more predictable concurrency.
 
 ### My view
+We dont have a lot of experience with concurrency in Rust, and thus we havent implemented it in our project. However, we have learned about the tools available in Rust for handling concurrency, such as `Mutex`, `Arc`, and atomic types like `AtomicU16`. 
 
-Vi havde ikke særligt meget concurrency i vores projekt, så vi stødte ikke på mange problemer. En ting vi dog stødte på og var en grund til vi skiftede over til concurrency var, at når vi skulle downloade billeder fra GitHub, så tog det lang tid, og det gjorde der gik noget tid før vores applikation startede op. Det 'fiksede' vi med at tilføje en loading screen, og så køre downloads i baggrunden (i en ny thread), mens vi viser loading screenen. Samt vi brugte Rayon til at parallelisere downloads, så de kunne ske hurtigere.
+We still implemented Mutex despite not needing it in our project, as we wanted to learn how to use it and how it works. We also learned about the challenges of concurrency, such as deadlocks. Our project already managed most of its connections one at a time, but by implementing Mutex we ensure that only one transaction can access the database connection at a time, which is a good practice for future-proofing our code. It is however not super necessary in our case.
 
 ## Code Snippets
 
@@ -130,5 +153,64 @@ fn main() {
     }
 
     println!("Final count: {}", *counter.lock().unwrap());
+}
+```
+
+
+## Example of scope-managed mutex
+
+>The inner scope is where all database operations are performed and the mutex connection is freed right after the database portions are finished, the rest is basic error handling and and return.
+
+```rust
+pub fn get_top_driver_standings(limit: Option<u8>) -> Vec<Vec<String>> {
+    let rows_data = {
+        let conn = get_connection().unwrap();
+        let final_query = /* ... */;
+        let mut stmt = conn.prepare(&final_query).unwrap();
+        stmt.query_map([], |row| {
+            Ok(vec![
+                row.get::<_, String>(0)?,
+                row.get::<_, i32>(1)?.to_string(),
+            ])
+        })
+        .unwrap()
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap()
+    }; // closing the scope here releases the mutex lock from get_connection and immediately frees the connection
+
+    let mut standings = Vec::new();
+    for (position, mut row_vec) in rows_data.into_iter().enumerate() {
+        row_vec.insert(0, (position + 1).to_string());
+        standings.push(row_vec);
+    }
+    standings
+}
+```	
+
+## Non-manaaged mutex example
+
+```rust
+pub fn get_top_driver_standings(limit: Option<u8>) -> Vec<Vec<String>> {
+    let conn = get_connection().unwrap();
+    let final_query = /* ... */;
+    let mut stmt = conn.prepare(&final_query).unwrap();
+    let rows = stmt
+        .query_map([], |row| {
+            Ok(vec![
+                row.get::<_, String>(0)?,
+                row.get::<_, i32>(1)?.to_string(),
+            ])
+        })
+        .unwrap(); // There is no scope-ending here which means the get_connection mutex lock stays until this function fully finishes. It could have ended sooner if it was managed as in the previous example.
+    let mut standings = Vec::new();
+    let mut position = 1;
+    for row in rows {
+        if let Ok(mut row_vec) = row {
+            row_vec.insert(0, position.to_string());
+            standings.push(row_vec);
+            position += 1;
+        }
+    }
+    standings
 }
 ```

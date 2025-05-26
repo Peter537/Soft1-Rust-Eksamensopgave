@@ -4,45 +4,59 @@ Ownership and Borrowing Concepts: Explain the concept of ownership and borrowing
 How did these features influence the design and functionality of your project?
 Provide examples of how managing ownership and borrowing helped improve your code’s safety or performance. What are some of the common problems you encountered using the Rust Ownership and Borrowing model?
 
-## Links
-
 ## How it's done in Rust
 
-- Primitive typer, der implementerer `Copy`-traiten (f.eks. `u16`, `f32`, `bool`, `char`), bliver ikke flyttet, når de bruges i en funktion; i stedet bliver deres værdi kopieret. Derfor kan variablen stadig anvendes senere i den oprindelige funktion, selv efter at være blevet brugt som argument i et funktionskald.
-- Borrow checker gør så data races og dangling references ikke kan ske.
-  - Ift data races (hvis to tråde prøver at ændre data på samme tid) så er det kun muligt at have en mutable reference til data ad gangen. Man kan heller ikke have en mutable og en immutable reference til data på samme tid.
-- Nogle gange bliver man nødt til at clone data for at gøre borrow checker glad (?)
-- Borrowing og ownership gør det klart hvem der ejer data og hvem der låner det. Det gør det lettere at forstå livscyklussen for data i programmet.
-- Man bruger kun `move` hvis man skal have inde i en closure/lambda hvis der er ting inden i som skal have ownership af data ude fra
-- Rust lifetimes hjælper med at sikre at referencer ikke lever længere end de data de refererer til, hvilket forhindrer dangling references.
-  - Man kan bruge `<'a>` på en funktion/struct for at angive at den har en lifetime parameter, som kan bruges til at specificere hvor længe referencerne lever. Så bliver de brugt ved at sige fx `x: &'a str` for at sige at `x` er en reference til en string som lever i samme lifetime som `'a`.
-- Rust tillader ikke Null referencer, hvilket forhindrer Null pointer exceptions. I stedet bruger Rust `Option`-typen til at repræsentere værdier, der kan være til stede eller fraværende.
+**Ownership**
+
+Every value has a variable that’s its owner. There's only one owner at a time. When the owner goes out of scope, the 
+value is dropped.
+
+**Borrowing**
+
+* Immutable Borrowing: You can have multiple immutable references to a value, but you cannot modify it.
+* Mutable Borrowing: You can have only one mutable reference to a value at a time, and no immutable references can coexist with it.
+- Primitive types that implement the `Copy` trait (e.g., `u16`, `f32`, `bool`, `char`) are copied, not moved, when 
+passed to functions. This means the original variable remains usable after being used as an argument.
+---
+- The borrow checker prevents data races and dangling references:
+    - Only one mutable reference to data is allowed at a time, and you cannot have mutable and immutable references simultaneously.
+- Sometimes cloning data is necessary to satisfy the borrow checker.
+- Ownership and borrowing clarify who owns and who borrows data, making data lifecycles easier to understand.
+- The `move` keyword is used in closures when ownership of external data is required inside the closure.
+- Lifetimes (`<'a>`) ensure references do not outlive the data they point to, preventing dangling references.
+- Rust does not allow null references, avoiding null pointer exceptions. Instead, it uses the `Option` type to represent optional values.
 
 ### Compared to other languages
 
-Det betyder man ikke behøver have en Garbage Collector, som i Java og C#, så der er ikke noget Runtime overhead. Man skal heller ikke sørge for selv at frigive hukommelse, som i C/C++.
+Rust’s ownership and borrowing system is unique compared to most mainstream languages:
 
-Hvis man kører multi-threaded kode, så sikrer man sig stadig at ens variabler har de værdier som de skal have, hvor sprog som JavaScript og Python kan have problemer med det, fordi de ikke har et striks ownership system.
+- **C/C++:** Memory management is manual, and there is no built-in ownership or borrowing system. This can lead to issues like dangling pointers, double frees, and memory leaks. Rust’s borrow checker enforces safety at compile time, preventing these problems.
+- **Java/C#:** These languages use garbage collection to manage memory, so developers don’t need to think about ownership. However, this can lead to unpredictable pauses and higher runtime overhead. Rust avoids garbage collection by enforcing strict ownership and borrowing rules, resulting in more predictable performance.
+- **Python/JavaScript:** Memory is managed automatically, and references are handled behind the scenes. There is no concept of borrowing or explicit ownership, which makes it easier to write code but can hide performance issues and bugs related to shared mutable state.
 
+Essentially, Rust only allows data that is explicity deemed necessary to stay alive and frees things that are otherwise not needed. You must be mindful of what data is used and for how long. This to me is so cool.
 ### My view
 
-Jeg kan godt lide at det er klart hvem det er som ejer data, men dog skal man lige sætte sig lidt mere ind i det, fordi et eksempel fra vores race.rs med `driver_lap_times`, der har vi bare været vant til fra Java at man parser data ind (hvor det så er en pointer til data), men her er det meget mere eksplicit at man skal bruge `&` for at låne data, så skal man lige huske.
+I really enjoy Rust's ownership and borrowing model as it enforces constant edge-case handling and makes sure that a system is built to be solid and robust. 
+Personally i wouldnt use rust for a todoapp, but i am most definitely interested in using it for bigger projects that need a robust design.
 
-Det har gjort mig mere opmærksom på hvordan det er data bevæger sig rundt i programmet, og det er helt klart noget som jeg kommer til at tænke mere på i fremtiden, også når jeg skriver i andre sprog.
+In terms of problems encountered, the most common issues were related to the borrow checker, such as:
+- Trying to use a variable after it has been moved.
+- Attempting to create multiple mutable references to the same data.
+
+In places of our codebase, we have had to use deferencing to ensure that a datapoint exists for long enough while in other cases we left merely a reference to the data.
 
 ## Code Snippets
 
-1. Vi bruger `move` for at flytte ejerskab ind i en closure for senere brug. Den her bruger også Mutable borrow ved at data skal opdateres.
+1. Using `move` in closures to transfer ownership of `career_id`:
 
-\*Vi flytter ejerskab af `career_id` ind i closuren.
-
-`/src/ui/main_screen.rs` : linje 53 - 70
-
+File: [`src\ui\main_screen.rs`](../src/ui/main_screen.rs)
 ```rust
-let career_id = career_number;
+let career_id = career_number; // Instantiated data outside the closure
 
 column = column.with_child(Button::new(label.clone()).on_click(
-    move |ctx, data: &mut AppState, _env| {
+    move |ctx, data: &mut AppState, _env| { // Move takes ownership of any variables used inside the closure. 
+                                            //Owner is therefore taken over and dumped by the end of the closure
         data.game_number = career_id.to_string();
         set_game_number(career_id);
         if has_selected_team() == false {
@@ -59,12 +73,10 @@ column = column.with_child(Button::new(label.clone()).on_click(
 ));
 ```
 
-2. Vi bruger `&` for at en funktion kan borrow en variabel uden at flytte ejerskabet
+2. The `&` operator is used to create a reference to a variable, allowing us to immutably borrow it without transferring ownership.
 
-Hvis vi ikke havde brugt `&driver_lap_times` (men bare `driver_lap_times`), så ville ejerskabet være flyttet ind i funktionen `calculate_driver_total_times`, og så ville den ikke kunne bruges i `create_driver_results` funktionen, fordi ejerskabet nu er flyttet til `calculate_driver_total_times`.
-
-`/src/backend/race.rs` : linje 20 - 25
-
+> This is useful when we want to use a variable without taking ownership, allowing us to use it later in the code.
+File: [`src\backend\race.rs`](../src/backend
 ```rust
 let driver_lap_times =
     generate_driver_lap_times(&drivers, circuit.lap_amount, circuit.length_km);
@@ -74,10 +86,10 @@ let driver_total_times = calculate_driver_total_times(&driver_lap_times);
 let driver_results = create_driver_results(&driver_total_times, &driver_lap_times);
 ```
 
-3. Vi bruger `String` i structs loaded fra databasen, fordi det vil være for komplekst at holde styr på lifetimes strings i structs.
+3. We use `String` in structs loaded from the database because it would be too complex to manage lifetimes of string slices in structs. 
+>Slices always require ownership of the data they point to
 
-`src/model/driver.rs` : linje 1 - 10
-
+File: [`src\model\driver.rs`](../src/model/driver.rs)
 ```rust
 pub struct Driver {
     pub id: u16,
@@ -91,10 +103,9 @@ pub struct Driver {
 }
 ```
 
-4. Vi bruger `{}`-scope lige efter `let tx = conn.transaction().unwrap();` fordi vi skal droppe vores prepared statements inden vi kan commit vores transaction. Det er fordi prepared statements borrower `tx`, så vi kan ikke commit før de er droppet
+4. We use a `{}`-scope immediately after `let tx = conn.transaction().unwrap();` because we need to drop our prepared statements before we can commit our transaction. This is because prepared statements borrow `tx`, so we cannot commit until they are dropped.
 
-`src/database/races.rs` : linje 45 - 90
-
+File: [`src\database\races.rs`](../src/database/races.rs)
 ```rust
 pub fn save_driver_results(
     ...
@@ -122,9 +133,7 @@ pub fn save_driver_results(
 }
 ```
 
-## Other examples
-
-- Eksempel på hvordan ejerskab og flytning fungerer i Rust:
+- Example of how ownership and moving works in Rust:
 
 ```rust
 fn main() {
@@ -136,7 +145,7 @@ fn main() {
 }
 ```
 
-- Eksempel på hvordan mutable borrow fungerer i Rust:
+- Example of how multiple immutable borrows work in Rust:
 
 ```rust
 fn main() {
@@ -148,6 +157,8 @@ fn main() {
 }
 ```
 
+- Example of how a mutable borrow works in Rust:
+
 ```rust
 fn main() {
     let mut s = String::from("hello");
@@ -155,5 +166,18 @@ fn main() {
     let r = &mut s;
     r.push_str(", world!");
     println!("{}", r); // Allowed: single mutable reference
+}
+```
+
+- Example of an error when mixing mutable and immutable borrows (causes a compilation error):
+
+```rust
+fn main() {
+    let mut s = String::from("hello");
+
+    let r1 = &s;
+    let r2 = &mut s; // Error: cannot borrow `s` as mutable because it is also borrowed as immutable
+
+    println!("{}, {}", r1, r2);
 }
 ```

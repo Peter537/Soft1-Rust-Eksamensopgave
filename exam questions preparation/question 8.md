@@ -8,35 +8,32 @@ Explain your use of pub, mod, and other visibility qualifiers to manage encapsul
 
 ## How it's done in Rust
 
-- I Rust er en `crate` et compilation unit, hvor det enten er en binary eller et library. Roden af en crate er `lib.rs` (til libraries) eller `main.rs` (til applikationer).
-- Vi har opdelt vores kode i moduler for at gøre det lettere at finde og vedligeholde koden.
-- Man bruger `pub` til at kontrollere synligheden af hvad man vil have skal blive vist til offentligheden.
-- Når alt bliver privat fra starten, så gør det man kommer til at tænke mere over strukturen af ens kode ift. hvad der skal være offentligt og hvad der ikke skal.
-- Man kan bruge `super` til at gå op til parent modulet
-- `mod` er entry-punktet for et modul (en folder med en `mod.rs` fil)
-- Man kan re-exportere structs og funktioner fra et modul ved at bruge `pub use`, hvilket gør det lettere at holde styr på hvad der er offentligt og hvad der ikke er, samt at undgå navnekonflikter. Det gør også man kan få et cleaner API.
-- Man kan tilgå private metoder i tests ved at bruge `#[cfg(test)]` attributten, som gør at de kun er synlige for test-koden. Det kræver dog at tests er skrevet i samme modul eller i et separat test-modul.
+- In Rust, a `crate` is a compilation unit—either a binary or a library—with its root in `main.rs` (for applications) or `lib.rs` (for libraries).
+- We organized our code into modules to improve maintainability and navigation.
+- The `pub` keyword controls visibility, making items public as needed, while everything is private by default, encouraging thoughtful API design.
+- The `mod` keyword defines a module, and `super` allows access to the parent module.
+- `pub use` enables re-exporting structs and functions, simplifying the public API and avoiding naming conflicts.
+- Private methods can be accessed in tests using the `#[cfg(test)]` attribute, provided tests are in the same or a dedicated test module.
 
 ### Compared to other languages
+In Java, `super` refers to the superclass, while in Rust, `super` refers to the parent module.
 
-I Java der er super en reference til klassen man extender fra, hvor i Rust er super en reference til parent modulet.
+Java uses package-private visibility by default. The four visibility levels in Java are:
 
-I Java er ting package-private by default. I Java er der fire synlighedsniveauer:
-
-- `public`: Tilgængelig overalt.
-- `protected`: Tilgængelig inden for samme package og i subklasser (også i andre packages).
-- `package-private`: Tilgængelig kun inden for samme package.
-- `private`: Tilgængelig kun inden for samme klasse.
+- `public`: Accessible everywhere.
+- `protected`: Accessible within the same package and by subclasses (even in other packages).
+- *package-private* (no modifier): Accessible only within the same package.
+- `private`: Accessible only within the same class.
 
 ### My view
 
-Jeg synes det er meget godt at Rust har det sådan at alt er privat som standard, fordi det gør man skal tænke mere over strukturen af ens kode ift. hvad der skal være offentligt og hvad der ikke skal.
+I feel like i most often try to make things private by default when i code as i dont need most tools more than in one place. This is especially the case for OOP. With that said i do enjoy how Rust has most things private by default, and you have to explicitly make them public if you want to use them in other modules. This makes it easier to keep track of what is public and what is private, and it helps avoid accidental naming conflicts.
 
 ## Code Snippets
 
-1. Vi bruger mod.rs til at organisere vores moduler ift. visbility.
+1. **Organizing Modules with `mod.rs` and Visibility**
 
-`src/database/mod.rs` : linje 4 - 10
+In [`src/database/mod.rs`](../src/database/mod.rs ), we define which submodules are public or private. For example:
 
 ```rust
 pub mod circuit;
@@ -48,58 +45,60 @@ pub mod race;
 pub mod teams;
 ```
 
-Connection er privat, siden den kun skal bruges internt i database modulen.
+Here, `connection` is private because it is only used internally within the `database` module. The other modules are public so they can be accessed from outside.
 
-2. I vores model modul er filerne private, og vi eksponerer kun structs, det gør det lettere at holde styr på hvad der er offentligt og hvad der ikke er, samt at undgå navnekonflikter. Det gør det også nemt at finde de structs man skal bruge i andre moduler, fordi man ikke skal finde hvilken fil de ligger i.
+2. **Re-exporting Structs for a Clean API**
 
-`src/model/mod.rs` : linje 1 - 20
+In our `model` module, files are private by default, and we only re-export the necessary structs. This keeps the API clean and avoids naming conflicts. For example, in [`src/model/mod.rs`](../src/model/mod.rs):
 
 ```rust
 mod circuit;
-...
-
-...
+// ...
 pub use team::TeamBase;
 ```
 
-3. Vi burde have brugt sådan noget som `pub(super)` i vores UI componenter, for at gøre dem synlige for deres parent modul, fordi det er kun komponenter som er relateret til UI, og de skal ikke være synlige for andre moduler. Det gør det lettere at holde styr på hvad der er offentligt og hvad der ikke er, samt at undgå navnekonflikter.
+This way, other modules can use `TeamBase` directly, without needing to know which file it comes from.
 
-`src/ui/components/mod.rs` : linje 1 - 2
+3. **Using `pub(super)` for UI Components**
+
+For UI components, we could have used `pub(super)` to make components visible only to their parent module, since they are only relevant within the UI context. This would help encapsulate them and prevent accidental usage elsewhere. For example, instead of:
 
 ```rust
 pub mod goto;
 pub mod table;
 ```
 
-Burde have været
+We could use:
 
 ```rust
 pub(super) mod goto;
 pub(super) mod table;
 ```
 
-## Other examples
+4. **Re-exporting for a Cleaner API**
 
-- Det er godt at re-export for at få en cleaner API (ligesom vi har gjort i vores model modul). Andet eksempel kunne være:
+Re-exporting items can simplify your public API. For example:
 
 ```rust
 // lib.rs
 mod utils;
 pub use utils::math::add;
 
-// så kan andre:
+// Usage in other files:
 fn main() {
     let sum = add(5, 7);
     println!("Sum: {}", sum);
 }
 ```
 
-- Eksempel på Visibility modifiers:
+5. **Visibility Modifiers in Rust**
 
-`pub` er den mest almindelige synlighed, og den gør et element tilgængeligt for alle moduler.
-`pub(crate)` gør et element tilgængeligt for hele crate'en, hvilket er nyttigt for at eksponere funktionalitet internt uden at gøre det til en del af den offentlige API.
-`pub(super)` gør et element synligt for sin overordnede modul, hvilket er nyttigt til at dele funktionalitet mellem søskende moduler.
-`pub(in path)` begrænser synligheden til en specifik modulsti, hvilket giver finjusteret kontrol over, hvor et element er tilgængeligt.
+- `pub`: Public everywhere.
+- `pub(crate)`: Visible within the entire crate.
+- `pub(super)`: Visible to the parent module.
+- `pub(in path)`: Visible only within a specific module path.
+
+Example:
 
 ```rust
 mod outer {
